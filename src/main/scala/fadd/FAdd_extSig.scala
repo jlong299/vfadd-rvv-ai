@@ -32,8 +32,8 @@ class FAdd_extSig(
     val valid_out = Output(Bool())
   })
 
-  require(ExpWidth == 5 || ExpWidth == 8, "ExpWidth of FAdd_extSig must be 5 or 8")
-  require(SigWidth == 8 || SigWidth == 11 || SigWidth == 24, "SigWidth of FAdd_extSig must be 8, 11 or 24")
+  require(ExpWidth == 5 || ExpWidth == 8, "Typical ExpWidth of FAdd_extSig is 5 (fp16) or 8 (fp32/bf16)")
+  require(SigWidth == 8 || SigWidth == 11 || SigWidth == 24, "Typical SigWidth of FAdd_extSig is 8 (fp16) or 11 (bf16) or 24 (fp32)")
 
   val sign_a = io.a.head(1).asBool
   val sign_b = io.b.head(1).asBool
@@ -178,9 +178,6 @@ class FAdd_extSig(
   // val g_adderOut = sig_adderOut_shifted(ExtendedWidth)
   // val s_adderOut = sig_adderOut_shifted(ExtendedWidth - 1, 0).orR
   // val sig_adderOut = sig_adderOut_shifted.head(SigWidth)
-  require(sign_adderOut.getWidth == 1, "sign_adderOut width must be 1")
-  require(exp_adderOut_shifted.getWidth == ExpWidth, "exp_adderOut_shifted width must be ExpWidth")
-  require(sig_adderOut_shifted.getWidth == SigWidth + ExtendedWidth + 1, "sig_adderOut_shifted width must be SigWidth + ExtendedWidth + 1")
 
   //             1 + ExpWidth + (SigWidth + ExtendedWidth + 1)
   io.res := Cat(sign_adderOut, exp_adderOut_shifted, sig_adderOut_shifted)
@@ -189,7 +186,7 @@ class FAdd_extSig(
   // inf, zero, nan, ....
 }
 
-object VerilogFAdd_extSig extends App {
-  println("Generating the FAdd_extSig hardware")
-  emitVerilog(new FAdd_extSig(ExpWidth = 8, SigWidth = 24, ExtendedWidth = 24 + 2), Array("--target-dir", "build/verilog_fadd_extsig"))
-}
+// object VerilogFAdd_extSig extends App {
+//   println("Generating the FAdd_extSig hardware")
+//   emitVerilog(new FAdd_extSig(ExpWidth = 8, SigWidth = 24, ExtendedWidth = 24 + 2), Array("--target-dir", "build/verilog_fadd_extsig"))
+// }
