@@ -169,7 +169,7 @@ class FAdd_extSig(
     adderOut_is_inf := false.B
   }
 
-  val sig_adderOut_shifted = adderOut << shiftLeft_amount // SigWidth + ExtendedWidth + 1 bits
+  val sig_adderOut_shifted = (adderOut << shiftLeft_amount)(SigWidth + ExtendedWidth, 0) // SigWidth + ExtendedWidth + 1 bits
 
   val exp_adderOut_shifted = exp_adderOut - exp_adderOut_tobe_subtracted
 
@@ -185,8 +185,11 @@ class FAdd_extSig(
   //             1 + ExpWidth + (SigWidth + ExtendedWidth + 1)
   io.res := Cat(sign_adderOut, exp_adderOut_shifted, sig_adderOut_shifted)
 
-
-  
   // TODO
   // inf, zero, nan, ....
+}
+
+object VerilogFAdd_extSig extends App {
+  println("Generating the FAdd_extSig hardware")
+  emitVerilog(new FAdd_extSig(ExpWidth = 8, SigWidth = 24, ExtendedWidth = 24 + 2), Array("--target-dir", "build/verilog_fadd_extsig"))
 }
