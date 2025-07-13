@@ -20,8 +20,8 @@ import race.vpu.yunsuan.util._
   *   Note: for shifting operation, the shifted-out part is disgarded
   */
 class FAdd_extSig(
-    ExpWidth: Int, // fp16: 5   fp32: 8
-    SigWidth: Int, // fp16: 8   bf16: 11   fp32: 24
+    ExpWidth: Int, // fp16: 5   bf16: 8   fp32: 8
+    SigWidth: Int, // fp16: 11  bf16: 8   fp32: 24
     ExtendedWidth: Int, // default: SigWidth + 2,
     ExtAreZeros: Boolean = false
 ) extends Module {
@@ -172,12 +172,6 @@ class FAdd_extSig(
   val sig_adderOut_shifted = (adderOut << shiftLeft_amount)(SigWidth + ExtendedWidth, 0) // SigWidth + ExtendedWidth + 1 bits
 
   val exp_adderOut_shifted = exp_adderOut - exp_adderOut_tobe_subtracted
-
-  // // Calculate LSB, Guard bit, Sticky bit, and significand
-  // val lsb_adderOut = sig_adderOut_shifted(ExtendedWidth + 1)
-  // val g_adderOut = sig_adderOut_shifted(ExtendedWidth)
-  // val s_adderOut = sig_adderOut_shifted(ExtendedWidth - 1, 0).orR
-  // val sig_adderOut = sig_adderOut_shifted.head(SigWidth)
 
   //             1 + ExpWidth + (SigWidth + ExtendedWidth + 1)
   io.res := Cat(sign_adderOut, exp_adderOut_shifted, sig_adderOut_shifted)
