@@ -177,7 +177,7 @@ class FAdd_16_32 extends Module {
   val rnd_cin_high_bf16 = Mux(!g_adderOut_high_bf16, false.B,
                           Mux(s_adderOut_high_bf16, true.B, lsb_adderOut_high_bf16))
   val sig_res_high_tmp = sig_adderOut_high_fp16 +&
-             Mux(res_is_fp16_S2, rnd_cin_high_fp16.asUInt, rnd_cin_high_bf16.asUInt << 3) // SigWidthFp19 + 1 bits
+            Mux(res_is_fp16_S2, rnd_cin_high_fp16.asUInt, rnd_cin_high_bf16.asUInt << 3) // SigWidthFp19 + 1 bits
   val sig_res_high = Mux(sig_res_high_tmp(SigWidthFp19),
                          sig_res_high_tmp(SigWidthFp19, 1), sig_res_high_tmp(SigWidthFp19 - 1, 0)) // SigWidthFp19 bits
   val exp_adjust_res_high = exp_res_extSig_fp19 + sig_res_high_tmp(SigWidthFp19).asUInt // 8 bits
@@ -185,5 +185,38 @@ class FAdd_16_32 extends Module {
             Mux(res_is_fp16_S2, exp_adjust_res_high === "b11111110".U, exp_adjust_res_high === "b00011110".U)
   val exp_res_high = Mux(exp_adjust_res_high === 1.U && !sig_res_high(SigWidthFp19 - 1), 0.U, exp_adjust_res_high) // 8 bits
 
-  
+  // Low fp32/fp16/bf16
+  val rnd_cin_low_fp32 = Mux(!g_adderOut_low_fp32, false.B,
+                          Mux(s_adderOut_low_fp32, true.B, lsb_adderOut_low_fp32))
+  val rnd_cin_low_fp16 = Mux(!g_adderOut_low_fp16, false.B,
+                          Mux(s_adderOut_low_fp16, true.B, lsb_adderOut_low_fp16))
+  val rnd_cin_low_bf16 = Mux(!g_adderOut_low_bf16, false.B,
+                          Mux(s_adderOut_low_bf16, true.B, lsb_adderOut_low_bf16))
+  val sig_res_low_tmp = sig_adderOut_low_fp32 +& Mux(res_is_32_S2, rnd_cin_low_fp32.asUInt,
+            Mux(res_is_fp16_S2, rnd_cin_low_fp16.asUInt << 13, rnd_cin_low_bf16.asUInt << 16)) // SigWidthFp32 + 1 bits
+  val sig_res_low = Mux(sig_res_low_tmp(SigWidthFp32),
+                        sig_res_low_tmp(SigWidthFp32, 1), sig_res_low_tmp(SigWidthFp32 - 1, 0)) // SigWidthFp32 bits
+  val exp_adjust_res_low = exp_res_extSig_fp32 + sig_res_low_tmp(SigWidthFp32).asUInt // 8 bits
+  val isInf_res_low = sig_res_low_tmp(SigWidthFp32) &&
+            Mux(!res_is_bf16_S2, exp_adjust_res_low === "b11111110".U, exp_adjust_res_low === "b00011110".U)
+  val exp_res_low = Mux(exp_adjust_res_low === 1.U && !sig_res_low(SigWidthFp32 - 1), 0.U, exp_adjust_res_low) // 8 bits
+
+  //-----------------------------------------
+  //---- Final result -----
+  //-----------------------------------------
+  val resFinal_fp16_high_tmp = Cat(sign_res_extSig_fp19, exp_res_high(4, 0), sig_res_high(SigWidthFp19 - 2, 0))
+  val resFinal_bf16_high_tmp = Cat(sign_res_extSig_fp19, exp_res_high, sig_res_high(SigWidthFp19 - 2, 3))
+  val resFinal_32_low_tmp = Cat(sign_res_extSig_fp32, exp_res_low, sig_res_low(SigWidthFp32 - 2, 0))
+  val resFinal_fp16_low_tmp = Cat(sign_res_extSig_fp32, exp_res_low(4, 0), sig_res_low(SigWidthFp32 - 2, 13))
+  val resFinal_bf16_low_tmp = Cat(sign_res_extSig_fp32, exp_res_low, sig_res_low(SigWidthFp32 - 2, 16))
+
+  io.res := Mux(res_is_32_S2, resFinal_32_low_tmp,
+            Mux(res_is_fp16_S2, Cat(resFinal_fp16_high_tmp, resFinal_fp16_low_tmp),
+                Cat(resFinal_bf16_high_tmp, resFinal_bf16_low_tmp)))
+  io.valid_out := valid_S2
+}
+
+object VerilogFAdd_16_32 extends App {
+  println("Generating the FAdd_16_32 hardware")
+  emitVerilog(new FAdd_16_32, Array("--target-dir", "build/verilog_fadd_16_32"))
 }
