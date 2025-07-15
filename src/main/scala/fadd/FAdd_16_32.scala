@@ -32,6 +32,7 @@ class FAdd_16_32 extends Module {
     val a, b = Input(UInt(32.W))
     val res = Output(UInt(32.W))
     val valid_out = Output(Bool())
+    val valid_S1 = Output(Bool())
   })
 
   val (is_bf16, is_fp16, is_fp32) = (io.is_bf16, io.is_fp16, io.is_fp32)
@@ -74,8 +75,6 @@ class FAdd_16_32 extends Module {
 
   val is_subnorm_16 = exp_is_0 zip frac_is_0_16 map {case (is_0, is_0_frac) => is_0 && !is_0_frac}
   val is_subnorm_32 = exp_is_0.drop(2) zip frac_is_0_32 map {case (is_0, is_0_frac) => is_0 && !is_0_frac}
-  val is_zero_16 = exp_is_0 zip frac_is_0_16 map {case (is_0, is_0_frac) => is_0 && is_0_frac}
-  val is_zero_32 = exp_is_0.drop(2) zip frac_is_0_32 map {case (is_0, is_0_frac) => is_0 && is_0_frac}
   val is_inf_16 = exp_is_all1s zip frac_is_0_16 map {case (is_all1s, is_0_frac) => is_all1s && is_0_frac}
   val is_inf_32 = exp_is_all1s.drop(2) zip frac_is_0_32 map {case (is_all1s, is_0_frac) => is_all1s && is_0_frac}
   val is_nan_16 = exp_is_all1s zip frac_is_0_16 map {case (is_all1s, is_0_frac) => is_all1s && !is_0_frac}
@@ -105,6 +104,10 @@ class FAdd_16_32 extends Module {
   fadd_extSig_fp19.io.valid_in := io.valid_in
   fadd_extSig_fp19.io.a := Cat(sign_high_a, exp_adjust_subnorm(2), sig_adjust_subnorm_16(2), 0.U(ExtendedWidthFp19.W))
   fadd_extSig_fp19.io.b := Cat(sign_high_b, exp_adjust_subnorm(3), sig_adjust_subnorm_16(3), 0.U(ExtendedWidthFp19.W))
+  fadd_extSig_fp19.io.a_is_inf := is_inf_16(2)
+  fadd_extSig_fp19.io.b_is_inf := is_inf_16(3)
+  fadd_extSig_fp19.io.a_is_nan := is_nan_16(2)
+  fadd_extSig_fp19.io.b_is_nan := is_nan_16(3)
   
   val fadd_extSig_fp32 = Module(new FAdd_extSig(ExpWidth = 8, SigWidth = SigWidthFp32, ExtendedWidth = ExtendedWidthFp32, ExtAreZeros = true))
   fadd_extSig_fp32.io.valid_in := io.valid_in
@@ -112,6 +115,10 @@ class FAdd_16_32 extends Module {
   val sig_adjust_subnorm_low_b = Mux(is_16, sig_adjust_subnorm_16(1) ## 0.U(13.W), sig_adjust_subnorm_32(1))
   fadd_extSig_fp32.io.a := Cat(sign_low_a, exp_adjust_subnorm(0), sig_adjust_subnorm_low_a, 0.U(ExtendedWidthFp32.W))
   fadd_extSig_fp32.io.b := Cat(sign_low_b, exp_adjust_subnorm(1), sig_adjust_subnorm_low_b, 0.U(ExtendedWidthFp32.W))
+  fadd_extSig_fp32.io.a_is_inf := Mux(is_16, is_inf_16(0), is_inf_32(0))
+  fadd_extSig_fp32.io.b_is_inf := Mux(is_16, is_inf_16(1), is_inf_32(1))
+  fadd_extSig_fp32.io.a_is_nan := Mux(is_16, is_nan_16(0), is_nan_32(0))
+  fadd_extSig_fp32.io.b_is_nan := Mux(is_16, is_nan_16(1), is_nan_32(1))
 
   //-----------------------------------------
   //---- Second stage: S1 (pipeline 1)   ----
@@ -119,6 +126,13 @@ class FAdd_16_32 extends Module {
   val valid_S1 = fadd_extSig_fp19.io.valid_out
   val res_extSig_fp19_S1 = fadd_extSig_fp19.io.res
   val res_extSig_fp32_S1 = fadd_extSig_fp32.io.res
+
+  val res_is_posInf_high_S1 = fadd_extSig_fp19.io.res_is_posInf
+  val res_is_negInf_high_S1 = fadd_extSig_fp19.io.res_is_negInf
+  val res_is_nan_high_S1 = fadd_extSig_fp19.io.res_is_nan
+  val res_is_posInf_low_S1 = fadd_extSig_fp32.io.res_is_posInf
+  val res_is_negInf_low_S1 = fadd_extSig_fp32.io.res_is_negInf
+  val res_is_nan_low_S1 = fadd_extSig_fp32.io.res_is_nan
 
   val res_is_32_S1 = RegEnable(res_is_32, valid_S1)
   val res_is_bf16_S1 = RegEnable(res_is_bf16, valid_S1)
@@ -133,6 +147,13 @@ class FAdd_16_32 extends Module {
   val res_is_32_S2 = RegEnable(res_is_32_S1, valid_S1)
   val res_is_bf16_S2 = RegEnable(res_is_bf16_S1, valid_S1)
   val res_is_fp16_S2 = RegEnable(res_is_fp16_S1, valid_S1)
+
+  val res_is_posInf_high_S2 = RegEnable(res_is_posInf_high_S1, valid_S1)
+  val res_is_negInf_high_S2 = RegEnable(res_is_negInf_high_S1, valid_S1)
+  val res_is_nan_high_S2 = RegEnable(res_is_nan_high_S1, valid_S1)
+  val res_is_posInf_low_S2 = RegEnable(res_is_posInf_low_S1, valid_S1)
+  val res_is_negInf_low_S2 = RegEnable(res_is_negInf_low_S1, valid_S1)
+  val res_is_nan_low_S2 = RegEnable(res_is_nan_low_S1, valid_S1)
 
   val (sign_res_extSig_fp19, sign_res_extSig_fp32) = (res_extSig_fp19_S2.head(1).asBool, res_extSig_fp32_S2.head(1).asBool)
   val (exp_res_extSig_fp19, exp_res_extSig_fp32) = (res_extSig_fp19_S2.tail(1).head(8), res_extSig_fp32_S2.tail(1).head(8))
@@ -210,10 +231,22 @@ class FAdd_16_32 extends Module {
   val resFinal_fp16_low_tmp = Cat(sign_res_extSig_fp32, exp_res_low(4, 0), sig_res_low(SigWidthFp32 - 2, 13))
   val resFinal_bf16_low_tmp = Cat(sign_res_extSig_fp32, exp_res_low, sig_res_low(SigWidthFp32 - 2, 16))
 
-  io.res := Mux(res_is_32_S2, resFinal_32_low_tmp,
-            Mux(res_is_fp16_S2, Cat(resFinal_fp16_high_tmp, resFinal_fp16_low_tmp),
-                Cat(resFinal_bf16_high_tmp, resFinal_bf16_low_tmp)))
+  val resFinal_is_posInf_high = isInf_res_high || res_is_posInf_high_S2
+  val resFinal_is_negInf_high = isInf_res_high || res_is_negInf_high_S2
+  val resFinal_is_posInf_low = isInf_res_low || res_is_posInf_low_S2
+  val resFinal_is_negInf_low = isInf_res_low || res_is_negInf_low_S2
+
+  val resFinal_32_low = Mux(res_is_nan_low_S2, "h7FC00000".U, Mux(resFinal_is_posInf_low, "h7F800000".U, Mux(resFinal_is_negInf_low, "hFF800000".U, resFinal_32_low_tmp)))
+  val resFinal_bf16_low = Mux(res_is_nan_low_S2, "h7FC0".U, Mux(resFinal_is_posInf_low, "h7F80".U, Mux(resFinal_is_negInf_low, "hFF80".U, resFinal_bf16_low_tmp)))
+  val resFinal_fp16_low = Mux(res_is_nan_low_S2, "h7E00".U, Mux(resFinal_is_posInf_low, "h7C00".U, Mux(resFinal_is_negInf_low, "hFC00".U, resFinal_fp16_low_tmp)))
+  val resFinal_bf16_high = Mux(res_is_nan_high_S2, "h7FC0".U, Mux(resFinal_is_posInf_high, "h7F80".U, Mux(resFinal_is_negInf_high, "hFF80".U, resFinal_bf16_high_tmp)))
+  val resFinal_fp16_high = Mux(res_is_nan_high_S2, "h7E00".U, Mux(resFinal_is_posInf_high, "h7C00".U, Mux(resFinal_is_negInf_high, "hFC00".U, resFinal_fp16_high_tmp)))
+
+  io.res := Mux(res_is_32_S2, resFinal_32_low,
+            Mux(res_is_fp16_S2, Cat(resFinal_fp16_high, resFinal_fp16_low),
+                Cat(resFinal_bf16_high, resFinal_bf16_low)))
   io.valid_out := valid_S2
+  io.valid_S1 := valid_S1
 }
 
 object VerilogFAdd_16_32 extends App {

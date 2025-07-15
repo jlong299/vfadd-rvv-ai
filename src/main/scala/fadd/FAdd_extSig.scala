@@ -18,6 +18,9 @@ import race.vpu.yunsuan.util._
   *     (3) output is 1 bit longer than input (result of addition)
   * 
   *   Note: for shifting operation, the shifted-out part is disgarded
+  * Pipeline:  |      
+  *       ---->|----->
+  *        S0  |  S1  
   */
 class FAdd_extSig(
     ExpWidth: Int, // fp16: 5   bf16: 8   fp32: 8
@@ -28,7 +31,10 @@ class FAdd_extSig(
   val io = IO(new Bundle {
     val valid_in = Input(Bool())
     val a, b = Input(UInt((1 + ExpWidth + SigWidth + ExtendedWidth).W))
+    val a_is_inf, b_is_inf = Input(Bool())
+    val a_is_nan, b_is_nan = Input(Bool())
     val res = Output(UInt((1 + ExpWidth + SigWidth + ExtendedWidth + 1).W))
+    val res_is_posInf, res_is_negInf, res_is_nan = Output(Bool())
     val valid_out = Output(Bool())
   })
 
@@ -93,9 +99,14 @@ class FAdd_extSig(
   val adderIn_a = Mux(exp_a_gte_b, sig_a, shiftRight_out)
   val adderIn_b = Mux(!exp_a_gte_b, sig_b, shiftRight_out)
 
-  /**
-    * Below is the second stage: S1 (pipeline 1)
-    */
+  //---- Inf and NaN ----
+  val res_is_nan_S0 = io.a_is_nan || io.b_is_nan || io.a_is_inf && io.b_is_inf && sign_a =/= sign_b
+  val res_is_posInf_S0 = !res_is_nan_S0 && (io.a_is_inf && !sign_a || io.b_is_inf && !sign_b)
+  val res_is_negInf_S0 = !res_is_nan_S0 && (io.a_is_inf && sign_a || io.b_is_inf && sign_b)
+
+  //----------------------------------------------
+  //  Below is the second stage: S1 (pipeline 1)
+  //----------------------------------------------
   io.valid_out := RegNext(io.valid_in)
   val sign_a_S1 = RegEnable(sign_a, io.valid_in)
   val sign_b_S1 = RegEnable(sign_b, io.valid_in)
@@ -124,9 +135,6 @@ class FAdd_extSig(
   val adderOut = adderOut_temp(SigWidth + ExtendedWidth + 1, 1) // SigWidth + ExtendedWidth + 1 bits
   
   val sign_adderOut = Mux(a_b_diffSign, Mux(abs_a_gt_b_S1, sign_a_S1, sign_b_S1), a_n_b_n)
-  // 下面处理a*b或者c为inf的情况下，sign的值。但是inf + -inf = nan的情况目前未考虑                           
-  // TODO
-
   val exp_adderOut = Mux(exp_a_gte_b_S1, exp_a_S1, exp_b_S1)
   val adderOut_int_part = adderOut.head(2)
   val adderOut_isZero = Wire(Bool())
@@ -176,8 +184,9 @@ class FAdd_extSig(
   //             1 + ExpWidth + (SigWidth + ExtendedWidth + 1)
   io.res := Cat(sign_adderOut, exp_adderOut_shifted, sig_adderOut_shifted)
 
-  // TODO
-  // inf, zero, nan, ....
+  io.res_is_nan := RegEnable(res_is_nan_S0, io.valid_in)
+  io.res_is_posInf := RegEnable(res_is_posInf_S0, io.valid_in) || adderOut_is_inf && !sign_adderOut
+  io.res_is_negInf := RegEnable(res_is_negInf_S0, io.valid_in) || adderOut_is_inf && sign_adderOut
 }
 
 // object VerilogFAdd_extSig extends App {
