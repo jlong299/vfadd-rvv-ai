@@ -16,7 +16,7 @@ object ivys{
   val scalatest = ivy"org.scalatest::scalatest:3.2.2"
 }
 
-object top extends ScalaModule  {
+object vfpu extends ScalaModule  {
   def chiselOpt: Option[PublishModule] = None
 
   override def millSourcePath = os.pwd
