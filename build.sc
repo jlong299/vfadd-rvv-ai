@@ -16,17 +16,16 @@ object ivys{
   val scalatest = ivy"org.scalatest::scalatest:3.2.2"
 }
 
-object vfpu extends ScalaModule  {
-  def chiselOpt: Option[PublishModule] = None
-
-  override def millSourcePath = os.pwd
-
+trait VfpuModule extends ScalaModule {
   override def scalaVersion = ivys.sv
 
   override def scalacOptions = Seq("-Xsource:2.13")
 
-  override def ivyDeps = (if(chiselOpt.isEmpty) Agg(ivys.chisel3) else Agg.empty[Dep]) ++ Agg(ivys.chiselCirct)
+  override def ivyDeps = Agg(ivys.chisel3, ivys.chiselCirct)
 
   override def scalacPluginIvyDeps = Agg(ivys.chisel3Plugin)
+}
 
+object vfpu extends VfpuModule  {
+  override def millSourcePath = os.pwd
 }
