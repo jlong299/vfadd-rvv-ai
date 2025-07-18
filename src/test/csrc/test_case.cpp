@@ -9,7 +9,7 @@
 // TestCase 实现
 // ===================================================================
 // FP32 single operation constructor using hexadecimal input
-TestCase::TestCase(const FMA_Operands_Hex& ops_hex, ErrorType error_type) 
+TestCase::TestCase(const FADD_Operands_Hex& ops_hex, ErrorType error_type) 
     : mode(TestMode::FP32), 
       error_type(error_type),
       is_fp32(true), is_fp16(false), is_bf16(false), is_widen(false)
@@ -17,20 +17,18 @@ TestCase::TestCase(const FMA_Operands_Hex& ops_hex, ErrorType error_type)
     // 直接使用16进制值
     a_fp32_bits = ops_hex.a_hex;
     b_fp32_bits = ops_hex.b_hex;
-    c_fp32_bits = ops_hex.c_hex;
 
     // 将16进制位模式转换为浮点数用于打印和计算
     memcpy(&op_fp.a, &a_fp32_bits, sizeof(float));
     memcpy(&op_fp.b, &b_fp32_bits, sizeof(float));
-    memcpy(&op_fp.c, &c_fp32_bits, sizeof(float));
 
     // 计算期望结果
-    float expected_fp = op_fp.a * op_fp.b + op_fp.c;
+    float expected_fp = op_fp.a + op_fp.b;
     memcpy(&expected_res_fp32, &expected_fp, sizeof(uint32_t));
 }
 
 // FP16 dual operation constructor
-TestCase::TestCase(const FMA_Operands_Hex_16& op1, const FMA_Operands_Hex_16& op2, ErrorType error_type)
+TestCase::TestCase(const FADD_Operands_Hex_16& op1, const FADD_Operands_Hex_16& op2, ErrorType error_type)
     : mode(TestMode::FP16),
       error_type(error_type),
       is_fp32(false), is_fp16(true), is_bf16(false), is_widen(false)
@@ -38,65 +36,28 @@ TestCase::TestCase(const FMA_Operands_Hex_16& op1, const FMA_Operands_Hex_16& op
     // Convert and store bits for operand set 1
     a1_fp16_bits = op1.a_hex;
     b1_fp16_bits = op1.b_hex;
-    c1_fp16_bits = op1.c_hex;
 
     // Convert and store bits for operand set 2
     a2_fp16_bits = op2.a_hex;
     b2_fp16_bits = op2.b_hex;
-    c2_fp16_bits = op2.c_hex;
 
     // Convert FP16 hex values to FP32 for calculation
     op1_fp.a = fp16_to_fp32(op1.a_hex);
     op1_fp.b = fp16_to_fp32(op1.b_hex);
-    op1_fp.c = fp16_to_fp32(op1.c_hex);
     
     op2_fp.a = fp16_to_fp32(op2.a_hex);
     op2_fp.b = fp16_to_fp32(op2.b_hex);
-    op2_fp.c = fp16_to_fp32(op2.c_hex);
 
-    // Calculate and store expected results with FP16 overflow handling
-    // For operand set 1
-    float mult_result1 = op1_fp.a * op1_fp.b;
-    uint16_t mult_fp16_1 = fp32_to_fp16(mult_result1);
-    uint16_t c_fp16_1 = fp32_to_fp16(op1_fp.c);
-    float expected_fp1;
-    
-    // Check if multiplication result is infinity in FP16
-    if ((mult_fp16_1 & 0x7C00) == 0x7C00 && (mult_fp16_1 & 0x03FF) == 0) {
-        // If a*b is infinity, final result is a*b (ignore c)
-        expected_fp1 = fp16_to_fp32(mult_fp16_1);
-    } else if ((c_fp16_1 & 0x7C00) == 0x7C00 && (c_fp16_1 & 0x03FF) == 0) {
-        // Otherwise, if c is infinity, final result is c (ignore a*b)
-        expected_fp1 = fp16_to_fp32(c_fp16_1);
-    } else {
-        // Normal case: perform a*b + c
-        expected_fp1 = mult_result1 + op1_fp.c;
-    }
-    
-    // For operand set 2
-    float mult_result2 = op2_fp.a * op2_fp.b;
-    uint16_t mult_fp16_2 = fp32_to_fp16(mult_result2);
-    uint16_t c_fp16_2 = fp32_to_fp16(op2_fp.c);
-    float expected_fp2;
-
-    // Check if multiplication result is infinity in FP16
-    if ((mult_fp16_2 & 0x7C00) == 0x7C00 && (mult_fp16_2 & 0x03FF) == 0) {
-        // If a*b is infinity, final result is a*b (ignore c)
-        expected_fp2 = fp16_to_fp32(mult_fp16_2);
-    } else if ((c_fp16_2 & 0x7C00) == 0x7C00 && (c_fp16_2 & 0x03FF) == 0) {
-        // Otherwise, if c is infinity, final result is c (ignore a*b)
-        expected_fp2 = fp16_to_fp32(c_fp16_2);
-    } else {
-        // Normal case: perform a*b + c
-        expected_fp2 = mult_result2 + op2_fp.c;
-    }
+    // Calculate and store expected results
+    float expected_fp1 = op1_fp.a + op1_fp.b;
+    float expected_fp2 = op2_fp.a + op2_fp.b;
     
     expected_res1_fp16 = fp32_to_fp16(expected_fp1);
     expected_res2_fp16 = fp32_to_fp16(expected_fp2);
 }
 
 // BF16 dual operation constructor
-TestCase::TestCase(const FMA_Operands_Hex_BF16& op1, const FMA_Operands_Hex_BF16& op2, ErrorType error_type)
+TestCase::TestCase(const FADD_Operands_Hex_BF16& op1, const FADD_Operands_Hex_BF16& op2, ErrorType error_type)
     : mode(TestMode::BF16),
       error_type(error_type),
       is_fp32(false), is_fp16(false), is_bf16(true), is_widen(false)
@@ -104,106 +65,63 @@ TestCase::TestCase(const FMA_Operands_Hex_BF16& op1, const FMA_Operands_Hex_BF16
     // Convert and store bits for operand set 1
     a1_bf16_bits = op1.a_hex;
     b1_bf16_bits = op1.b_hex;
-    c1_bf16_bits = op1.c_hex;
 
     // Convert and store bits for operand set 2
     a2_bf16_bits = op2.a_hex;
     b2_bf16_bits = op2.b_hex;
-    c2_bf16_bits = op2.c_hex;
 
     // Convert BF16 hex values to FP32 for calculation
     op1_fp.a = bf16_to_fp32(op1.a_hex);
     op1_fp.b = bf16_to_fp32(op1.b_hex);
-    op1_fp.c = bf16_to_fp32(op1.c_hex);
     
     op2_fp.a = bf16_to_fp32(op2.a_hex);
     op2_fp.b = bf16_to_fp32(op2.b_hex);
-    op2_fp.c = bf16_to_fp32(op2.c_hex);
 
-    // Calculate and store expected results with BF16 overflow handling
-    // For operand set 1
-    float mult_result1 = op1_fp.a * op1_fp.b;
-    uint16_t mult_bf16_1 = fp32_to_bf16(mult_result1);
-    uint16_t c_bf16_1 = fp32_to_bf16(op1_fp.c);
-    float expected_fp1;
-    
-    // Check if multiplication result is infinity in BF16
-    if ((mult_bf16_1 & 0x7F80) == 0x7F80 && (mult_bf16_1 & 0x007F) == 0) {
-        // If a*b is infinity, final result is a*b (ignore c)
-        expected_fp1 = bf16_to_fp32(mult_bf16_1);
-    } else if ((c_bf16_1 & 0x7F80) == 0x7F80 && (c_bf16_1 & 0x007F) == 0) {
-        // Otherwise, if c is infinity, final result is c (ignore a*b)
-        expected_fp1 = bf16_to_fp32(c_bf16_1);
-    } else {
-        // Normal case: perform a*b + c
-        expected_fp1 = mult_result1 + op1_fp.c;
-    }
-    
-    // For operand set 2
-    float mult_result2 = op2_fp.a * op2_fp.b;
-    uint16_t mult_bf16_2 = fp32_to_bf16(mult_result2);
-    uint16_t c_bf16_2 = fp32_to_bf16(op2_fp.c);
-    float expected_fp2;
-
-    // Check if multiplication result is infinity in BF16
-    if ((mult_bf16_2 & 0x7F80) == 0x7F80 && (mult_bf16_2 & 0x007F) == 0) {
-        // If a*b is infinity, final result is a*b (ignore c)
-        expected_fp2 = bf16_to_fp32(mult_bf16_2);
-    } else if ((c_bf16_2 & 0x7F80) == 0x7F80 && (c_bf16_2 & 0x007F) == 0) {
-        // Otherwise, if c is infinity, final result is c (ignore a*b)
-        expected_fp2 = bf16_to_fp32(c_bf16_2);
-    } else {
-        // Normal case: perform a*b + c
-        expected_fp2 = mult_result2 + op2_fp.c;
-    }
+    // Calculate and store expected results
+    float expected_fp1 = op1_fp.a + op1_fp.b;
+    float expected_fp2 = op2_fp.a + op2_fp.b;
     
     expected_res1_bf16 = fp32_to_bf16(expected_fp1);
     expected_res2_bf16 = fp32_to_bf16(expected_fp2);
 }
 
 // FP16 widen operation constructor
-TestCase::TestCase(const FMA_Operands_FP16_Widen& ops_widen, ErrorType error_type)
+TestCase::TestCase(const FADD_Operands_FP16_Widen& ops_widen, ErrorType error_type)
     : mode(TestMode::FP16_Widen),
       error_type(error_type),
       is_fp32(false), is_fp16(true), is_bf16(false), is_widen(true)
 {
     // 存储输入数据的位表示
-    a_fp32_bits = ((uint32_t)ops_widen.a_hex) << 16;  // FP16 a扩展到FP32格式 (左移16位)
-    b_fp32_bits = ((uint32_t)ops_widen.b_hex) << 16;  // FP16 b扩展到FP32格式 (左移16位)
-    c_fp32_bits = ops_widen.c_hex;                     // FP32 c直接使用
+    a_fp32_bits = ((uint32_t)ops_widen.a_hex);  // For DUT input
+    b_fp32_bits = ((uint32_t)ops_widen.b_hex);        // For DUT input
     
     // 转换为浮点数用于计算
     op_fp.a = fp16_to_fp32(ops_widen.a_hex);
     op_fp.b = fp16_to_fp32(ops_widen.b_hex);
-    memcpy(&op_fp.c, &ops_widen.c_hex, sizeof(float));
     
     // 计算期望结果 (FP32精度)
-    float mult_result = op_fp.a * op_fp.b;
-    float expected_fp = mult_result + op_fp.c;
+    float expected_fp = op_fp.a + op_fp.b;
     
     // 转换期望结果为位表示
     memcpy(&expected_res_fp32, &expected_fp, sizeof(uint32_t));
 }
 
 // BF16 widen operation constructor
-TestCase::TestCase(const FMA_Operands_BF16_Widen& ops_widen, ErrorType error_type)
+TestCase::TestCase(const FADD_Operands_BF16_Widen& ops_widen, ErrorType error_type)
     : mode(TestMode::BF16_Widen),
       error_type(error_type),
       is_fp32(false), is_fp16(false), is_bf16(true), is_widen(true)
 {
     // 存储输入数据的位表示
-    a_fp32_bits = ((uint32_t)ops_widen.a_hex) << 16;
-    b_fp32_bits = ((uint32_t)ops_widen.b_hex) << 16;
-    c_fp32_bits = ops_widen.c_hex;
+    a_fp32_bits = ((uint32_t)ops_widen.a_hex);
+    b_fp32_bits = ((uint32_t)ops_widen.b_hex);
     
     // 转换为浮点数用于计算
     op_fp.a = bf16_to_fp32(ops_widen.a_hex);
     op_fp.b = bf16_to_fp32(ops_widen.b_hex);
-    memcpy(&op_fp.c, &ops_widen.c_hex, sizeof(float));
     
     // 计算期望结果 (FP32精度)
-    float mult_result = op_fp.a * op_fp.b;
-    float expected_fp = mult_result + op_fp.c;
+    float expected_fp = op_fp.a + op_fp.b;
     
     // 转换期望结果为位表示
     memcpy(&expected_res_fp32, &expected_fp, sizeof(uint32_t));
@@ -214,56 +132,50 @@ void TestCase::print_details() const {
     switch(mode) {
         case TestMode::FP32:
             printf("Mode: FP32 Single (Hex Input)\n");
-            printf("Inputs (HEX): a=0x%08X, b=0x%08X, c=0x%08X\n", 
-                   a_fp32_bits, b_fp32_bits, c_fp32_bits);
-            printf("Inputs (FP):  a=%.8f, b=%.8f, c=%.8f\n", 
-                   op_fp.a, op_fp.b, op_fp.c);
+            printf("Inputs (HEX): a=0x%08X, b=0x%08X\n", 
+                   a_fp32_bits, b_fp32_bits);
+            printf("Inputs (FP):  a=%.8f, b=%.8f\n", 
+                   op_fp.a, op_fp.b);
             float expected_fp;
             memcpy(&expected_fp, &expected_res_fp32, sizeof(float));
             printf("Expected: %.8f (HEX: 0x%08X)\n", expected_fp, expected_res_fp32);
             break;
         case TestMode::FP16:
             printf("Mode: FP16 Dual\n");
-            printf("Inputs OP1: a=%.8f (0x%x), b=%.8f (0x%x), c=%.8f (0x%x)\n", 
+            printf("Inputs OP1: a=%.8f (0x%x), b=%.8f (0x%x)\n", 
                    op1_fp.a, a1_fp16_bits, 
-                   op1_fp.b, b1_fp16_bits, 
-                   op1_fp.c, c1_fp16_bits);
-            printf("Inputs OP2: a=%.8f (0x%x), b=%.8f (0x%x), c=%.8f (0x%x)\n", 
+                   op1_fp.b, b1_fp16_bits);
+            printf("Inputs OP2: a=%.8f (0x%x), b=%.8f (0x%x)\n", 
                    op2_fp.a, a2_fp16_bits, 
-                   op2_fp.b, b2_fp16_bits, 
-                   op2_fp.c, c2_fp16_bits);
+                   op2_fp.b, b2_fp16_bits);
             printf("Expected1: %.8f (HEX: 0x%x)\n", fp16_to_fp32(expected_res1_fp16), expected_res1_fp16);
             printf("Expected2: %.8f (HEX: 0x%x)\n", fp16_to_fp32(expected_res2_fp16), expected_res2_fp16);
             break;
         case TestMode::BF16:
             printf("Mode: BF16 Dual\n");
-            printf("Inputs OP1: a=%.8f (0x%x), b=%.8f (0x%x), c=%.8f (0x%x)\n", 
+            printf("Inputs OP1: a=%.8f (0x%x), b=%.8f (0x%x)\n", 
                    op1_fp.a, a1_bf16_bits, 
-                   op1_fp.b, b1_bf16_bits, 
-                   op1_fp.c, c1_bf16_bits);
-            printf("Inputs OP2: a=%.8f (0x%x), b=%.8f (0x%x), c=%.8f (0x%x)\n", 
+                   op1_fp.b, b1_bf16_bits);
+            printf("Inputs OP2: a=%.8f (0x%x), b=%.8f (0x%x)\n", 
                    op2_fp.a, a2_bf16_bits, 
-                   op2_fp.b, b2_bf16_bits, 
-                   op2_fp.c, c2_bf16_bits);
+                   op2_fp.b, b2_bf16_bits);
             printf("Expected1: %.8f (HEX: 0x%x)\n", bf16_to_fp32(expected_res1_bf16), expected_res1_bf16);
             printf("Expected2: %.8f (HEX: 0x%x)\n", bf16_to_fp32(expected_res2_bf16), expected_res2_bf16);
             break;
         case TestMode::FP16_Widen:
-            printf("Mode: FP16 Widen (a,b=FP16, c=FP32, result=FP32)\n");
-            printf("Inputs: a=%.8f (FP16: 0x%04x), b=%.8f (FP16: 0x%04x), c=%.8f (FP32: 0x%08x)\n", 
-                   op_fp.a, (uint16_t)(a_fp32_bits >> 16),
-                   op_fp.b, (uint16_t)(b_fp32_bits >> 16),
-                   op_fp.c, c_fp32_bits);
+            printf("Mode: FP16 Widen (a,b=FP16, result=FP32)\n");
+            printf("Inputs: a=%.8f (FP16: 0x%04x), b=%.8f (FP16: 0x%04x)\n", 
+                   op_fp.a, (uint16_t)(a_fp32_bits),
+                   op_fp.b, (uint16_t)(b_fp32_bits));
             float expected_fp_widen;
             memcpy(&expected_fp_widen, &expected_res_fp32, sizeof(float));
             printf("Expected: %.8f (HEX: 0x%08X)\n", expected_fp_widen, expected_res_fp32);
             break;
         case TestMode::BF16_Widen:
-            printf("Mode: BF16 Widen (a,b=BF16, c=FP32, result=FP32)\n");
-            printf("Inputs: a=%.8f (BF16: 0x%04x), b=%.8f (BF16: 0x%04x), c=%.8f (FP32: 0x%08x)\n", 
-                   op_fp.a, (uint16_t)(a_fp32_bits >> 16),
-                   op_fp.b, (uint16_t)(b_fp32_bits >> 16),
-                   op_fp.c, c_fp32_bits);
+            printf("Mode: BF16 Widen (a,b=BF16, result=FP32)\n");
+            printf("Inputs: a=%.8f (BF16: 0x%04x), b=%.8f (BF16: 0x%04x)\n", 
+                   op_fp.a, (uint16_t)(a_fp32_bits),
+                   op_fp.b, (uint16_t)(b_fp32_bits));
             float expected_fp_widen_bf16;
             memcpy(&expected_fp_widen_bf16, &expected_res_fp32, sizeof(float));
             printf("Expected: %.8f (HEX: 0x%08X)\n", expected_fp_widen_bf16, expected_res_fp32);
@@ -309,7 +221,7 @@ bool TestCase::check_result(const DutOutputs& dut_res) const {
                 pass = (ulp_diff <= 8) || both_zero;
             }
             if (error_type == ErrorType::RelativeError) {
-                float max_abs = std::max(std::abs(op_fp.a * op_fp.b), std::abs(op_fp.c));
+                float max_abs = std::max(std::abs(op_fp.a), std::abs(op_fp.b));
                 relative_error = std::abs(dut_res_fp - expected_fp) / max_abs;
                 pass = ((max_abs < std::pow(2, -60)) 
                        ? (relative_error < 1e-3) //若ab或c的绝对值太小，则放宽误差要求
@@ -376,7 +288,7 @@ bool TestCase::check_result(const DutOutputs& dut_res) const {
                 float expected2_fp = fp16_to_fp32(expected_res2_fp16);
                 
                 // 计算操作数1的相对误差
-                float max_abs1 = std::max(std::abs(op1_fp.a * op1_fp.b), std::abs(op1_fp.c));
+                float max_abs1 = std::max(std::abs(op1_fp.a), std::abs(op1_fp.b));
                 float relative_error1 = std::abs(dut_res1_fp - expected1_fp) / max_abs1;
                 bool precise_pass1 = (dut_res.res_out_16_0 == expected_res1_fp16);
                 pass1 = ((max_abs1 < std::pow(2, -10))  // FP16精度较低，调整阈值
@@ -385,7 +297,7 @@ bool TestCase::check_result(const DutOutputs& dut_res) const {
                         || precise_pass1 || both_zero1;
                 
                 // 计算操作数2的相对误差
-                float max_abs2 = std::max(std::abs(op2_fp.a * op2_fp.b), std::abs(op2_fp.c));
+                float max_abs2 = std::max(std::abs(op2_fp.a), std::abs(op2_fp.b));
                 float relative_error2 = std::abs(dut_res2_fp - expected2_fp) / max_abs2;
                 bool precise_pass2 = (dut_res.res_out_16_1 == expected_res2_fp16);
                 pass2 = ((max_abs2 < std::pow(2, -10))  // FP16精度较低，调整阈值
@@ -434,7 +346,7 @@ bool TestCase::check_result(const DutOutputs& dut_res) const {
             float expected2_fp = bf16_to_fp32(expected_res2_bf16);
             
             // 计算操作数1的相对误差
-            float max_abs1 = std::max(std::abs(op1_fp.a * op1_fp.b), std::abs(op1_fp.c));
+            float max_abs1 = std::max(std::abs(op1_fp.a), std::abs(op1_fp.b));
             float relative_error1 = std::abs(dut_res1_fp - expected1_fp) / max_abs1;
             bool precise_pass1 = (dut_res.res_out_16_0 == expected_res1_bf16);
             rel_pass1 = ((max_abs1 < std::pow(2, -30))  // BF16有较好的指数范围，但尾数精度较低
@@ -443,7 +355,7 @@ bool TestCase::check_result(const DutOutputs& dut_res) const {
                     || precise_pass1 || both_zero1;
             
             // 计算操作数2的相对误差
-            float max_abs2 = std::max(std::abs(op2_fp.a * op2_fp.b), std::abs(op2_fp.c));
+            float max_abs2 = std::max(std::abs(op2_fp.a), std::abs(op2_fp.b));
             float relative_error2 = std::abs(dut_res2_fp - expected2_fp) / max_abs2;
             bool precise_pass2 = (dut_res.res_out_16_1 == expected_res2_bf16);
             rel_pass2 = ((max_abs2 < std::pow(2, -30))  // BF16有较好的指数范围，但尾数精度较低

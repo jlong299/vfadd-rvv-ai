@@ -5,28 +5,26 @@
 
 #include "fp_utils.h"
 
-// 定义FMA操作数结构体
-struct FMA_Operands {
-    float a, b, c;
+// 定义FADD操作数结构体
+struct FADD_Operands {
+    float a, b;
 };
 
-// 定义16进制FMA操作数结构体
-struct FMA_Operands_Hex {
-    uint32_t a_hex, b_hex, c_hex;
+// 定义16进制FADD操作数结构体
+struct FADD_Operands_Hex {
+    uint32_t a_hex, b_hex;
 };
-struct FMA_Operands_Hex_16 {
-    uint16_t a_hex, b_hex, c_hex;
-};
-struct FMA_Operands_Hex_BF16 {
-    uint16_t a_hex, b_hex, c_hex;
-};
-struct FMA_Operands_FP16_Widen {
+struct FADD_Operands_Hex_16 {
     uint16_t a_hex, b_hex;
-    uint32_t c_hex;
 };
-struct FMA_Operands_BF16_Widen {
+struct FADD_Operands_Hex_BF16 {
     uint16_t a_hex, b_hex;
-    uint32_t c_hex;
+};
+struct FADD_Operands_FP16_Widen {
+    uint16_t a_hex, b_hex;
+};
+struct FADD_Operands_BF16_Widen {
+    uint16_t a_hex, b_hex;
 };
 
 // 定义测试模式的枚举类型
@@ -59,19 +57,19 @@ struct DutOutputs {
 class TestCase {
 public:
     // 构造函数 for FP32 single operation using hexadecimal input
-    TestCase(const FMA_Operands_Hex& ops_hex, ErrorType error_type = ErrorType::ULP);
+    TestCase(const FADD_Operands_Hex& ops_hex, ErrorType error_type = ErrorType::ULP);
     
     // 构造函数 for FP16 dual operation using hexadecimal input
-    TestCase(const FMA_Operands_Hex_16& op1, const FMA_Operands_Hex_16& op2, ErrorType error_type = ErrorType::ULP);
+    TestCase(const FADD_Operands_Hex_16& op1, const FADD_Operands_Hex_16& op2, ErrorType error_type = ErrorType::ULP);
     
     // 构造函数 for BF16 dual operation using hexadecimal input
-    TestCase(const FMA_Operands_Hex_BF16& op1, const FMA_Operands_Hex_BF16& op2, ErrorType error_type = ErrorType::ULP);
+    TestCase(const FADD_Operands_Hex_BF16& op1, const FADD_Operands_Hex_BF16& op2, ErrorType error_type = ErrorType::ULP);
     
-    // 构造函数 for FP16 widen operation using hexadecimal input (a,b are FP16, c is FP32, result is FP32)
-    TestCase(const FMA_Operands_FP16_Widen& ops_widen, ErrorType error_type = ErrorType::ULP);
+    // 构造函数 for FP16 widen operation using hexadecimal input (a,b are FP16, result is FP32)
+    TestCase(const FADD_Operands_FP16_Widen& ops_widen, ErrorType error_type = ErrorType::ULP);
     
-    // 构造函数 for BF16 widen operation using hexadecimal input (a,b are BF16, c is FP32, result is FP32)
-    TestCase(const FMA_Operands_BF16_Widen& ops_widen, ErrorType error_type = ErrorType::ULP);
+    // 构造函数 for BF16 widen operation using hexadecimal input (a,b are BF16, result is FP32)
+    TestCase(const FADD_Operands_BF16_Widen& ops_widen, ErrorType error_type = ErrorType::ULP);
     
     void print_details() const;
     bool check_result(const DutOutputs& dut_res) const;
@@ -84,22 +82,22 @@ public:
     bool is_fp32, is_fp16, is_bf16, is_widen;
 
     // FP32 模式数据
-    uint32_t a_fp32_bits, b_fp32_bits, c_fp32_bits;
+    uint32_t a_fp32_bits, b_fp32_bits;
 
     // FP16 模式数据
-    uint16_t a1_fp16_bits, b1_fp16_bits, c1_fp16_bits;
-    uint16_t a2_fp16_bits, b2_fp16_bits, c2_fp16_bits;
+    uint16_t a1_fp16_bits, b1_fp16_bits;
+    uint16_t a2_fp16_bits, b2_fp16_bits;
 
     // BF16 模式数据
-    uint16_t a1_bf16_bits, b1_bf16_bits, c1_bf16_bits;
-    uint16_t a2_bf16_bits, b2_bf16_bits, c2_bf16_bits;
+    uint16_t a1_bf16_bits, b1_bf16_bits;
+    uint16_t a2_bf16_bits, b2_bf16_bits;
 
 private:
     // 原始浮点数值，用于打印和计算期望结果
     // FP32 - now using the struct for consistency
-    FMA_Operands op_fp;
+    FADD_Operands op_fp;
     // FP16 - uses the struct
-    FMA_Operands op1_fp, op2_fp;
+    FADD_Operands op1_fp, op2_fp;
 
     // 期望结果
     uint32_t expected_res_fp32;

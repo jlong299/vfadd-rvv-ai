@@ -90,43 +90,36 @@ bool Simulator::run_test(const TestCase& test) {
         case TestMode::FP32:
             top_->io_a_in_32 = test.a_fp32_bits;
             top_->io_b_in_32 = test.b_fp32_bits;
-            top_->io_c_in_32 = test.c_fp32_bits;
             break;
         case TestMode::FP16:
             // 注意：Verilator会把 a_in_16: Vec(2, UInt(16.W)) 转换成 io_a_in_16_0, io_a_in_16_1
             top_->io_a_in_16_0 = test.a1_fp16_bits;
             top_->io_b_in_16_0 = test.b1_fp16_bits;
-            top_->io_c_in_16_0 = test.c1_fp16_bits;
             top_->io_a_in_16_1 = test.a2_fp16_bits;
             top_->io_b_in_16_1 = test.b2_fp16_bits;
-            top_->io_c_in_16_1 = test.c2_fp16_bits;
             break;
         case TestMode::BF16:
             // BF16也使用16位端口
             top_->io_a_in_16_0 = test.a1_bf16_bits;
             top_->io_b_in_16_0 = test.b1_bf16_bits;
-            top_->io_c_in_16_0 = test.c1_bf16_bits;
             top_->io_a_in_16_1 = test.a2_bf16_bits;
             top_->io_b_in_16_1 = test.b2_bf16_bits;
-            top_->io_c_in_16_1 = test.c2_bf16_bits;
             break;
         case TestMode::FP16_Widen:
-            // FP16 Widen: a,b是FP16, c是FP32
-            // 在test_case中，a,b的fp16值被存在了a_fp32_bits的高16位
+            // FP16 Widen: a,b是FP16, result是FP32
+            // 在test_case中，a,b的fp16值被存在了a_fp32_bits和b_fp32_bits的低16位中
             top_->io_a_in_16_0 = 0;
-            top_->io_a_in_16_1 = (test.a_fp32_bits >> 16) & 0xFFFF;
+            top_->io_a_in_16_1 = test.a_fp32_bits & 0xFFFF;
             top_->io_b_in_16_0 = 0;
-            top_->io_b_in_16_1 = (test.b_fp32_bits >> 16) & 0xFFFF;
-            top_->io_c_in_32 = test.c_fp32_bits;
+            top_->io_b_in_16_1 = test.b_fp32_bits & 0xFFFF;
             break;
         case TestMode::BF16_Widen:
-            // BF16 Widen: a,b是BF16, c是FP32
-            // 在test_case中，a,b的bf16值被存在了a_fp32_bits的高16位
+            // BF16 Widen: a,b是BF16, result是FP32
+            // 在test_case中，a,b的bf16值被存在了a_fp32_bits和b_fp32_bits的低16位中
             top_->io_a_in_16_0 = 0;
-            top_->io_a_in_16_1 = (test.a_fp32_bits >> 16) & 0xFFFF;
+            top_->io_a_in_16_1 = test.a_fp32_bits & 0xFFFF;
             top_->io_b_in_16_0 = 0;
-            top_->io_b_in_16_1 = (test.b_fp32_bits >> 16) & 0xFFFF;
-            top_->io_c_in_32 = test.c_fp32_bits;
+            top_->io_b_in_16_1 = test.b_fp32_bits & 0xFFFF;
             break;
     }
 
