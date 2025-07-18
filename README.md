@@ -1,4 +1,4 @@
-# RISC-V Vector Floating-point Unit for AI
+# RISC-V Vector Floating-point Adder for AI
 
 # Verilog Gen Examples
 ```
