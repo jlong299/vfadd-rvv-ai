@@ -20,11 +20,12 @@ import chisel3._
 import chisel3.util._
 import race.vpu._
 
-class FAdd_16_32 extends Module {
+class FAdd_16_32(
+  ExtendedWidthFp19: Int = 10 + 1 + 2, // Tunable parameter: trade-off between area and precision
+  ExtendedWidthFp32: Int = 23 + 1 + 2
+) extends Module {
   val SigWidthFp19 = 10 + 1  // Fixed
   val SigWidthFp32 = 23 + 1  // Fixed
-  val ExtendedWidthFp19 = SigWidthFp19 + 2 // Tunable parameter: trade-off between area and precision
-  val ExtendedWidthFp32 = SigWidthFp32 + 2
   val io = IO(new Bundle {
     val valid_in = Input(Bool())
     val is_bf16, is_fp16, is_fp32 = Input(Bool())

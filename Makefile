@@ -45,7 +45,6 @@ $(BIN): $(VSRCS) $(CSRCS) $(shell find ./src/test/csrc/include -name "*.h")
 	--Mdir $(OBJ_DIR) -o $(abspath $(BIN))
 
 run: $(BIN)
-	@echo
 	@echo "------------ RUN --------------"
 	$(NPC_EXEC)
 

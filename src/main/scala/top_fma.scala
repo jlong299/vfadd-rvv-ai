@@ -8,7 +8,7 @@ import race.vpu._
 import race.vpu.VParams._
 import race.vpu.exu.laneexu.fp._
 
-class top extends Module{
+class topFMA extends Module{
   val io = IO(new Bundle {
     val valid_in = Input(Bool())
     val is_bf16, is_fp16, is_fp32 = Input(Bool())
@@ -47,7 +47,7 @@ class top extends Module{
   io.valid_out := fma.io.valid_out
 }
 
-object top extends App {
+object topFMA extends App {
   println("Generating the top FMA hardware")
-  (new ChiselStage).emitVerilog(new top, args)
+  (new ChiselStage).emitVerilog(new topFMA, args)
 }
