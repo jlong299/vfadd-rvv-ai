@@ -1,10 +1,9 @@
-MILL_TOP = vfpu
-MAIN = top.topMain
 BUILD_DIR = ./build/vfpu
-OBJ_DIR = $(BUILD_DIR)/OBJ_DIR
-TOPNAME = top
+MILL_TOP = vfpu
+# OBJ_DIR = $(BUILD_DIR)/OBJ_DIR
+TOPNAME = topFMA
+MAIN = top.$(TOPNAME)
 TOP_V = $(BUILD_DIR)/$(TOPNAME).v
-
 SCALA_FILE = $(shell find ./src/main/ -name '*.scala')
 
 $(TOP_V): $(SCALA_FILE)
