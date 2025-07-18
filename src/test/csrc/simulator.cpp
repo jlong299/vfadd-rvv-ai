@@ -38,7 +38,7 @@ void Simulator::init_vcd() {
     contextp_->traceEverOn(true);
     tfp_ = new VerilatedVcdC;
     top_->trace(tfp_, 99);
-    tfp_->open("build/fma/top.vcd");
+    tfp_->open("build/vfpu/top.vcd");
 #endif
 }
 
@@ -141,7 +141,15 @@ bool Simulator::run_test(const TestCase& test) {
         dut_res.res_out_32 = top_->io_res_out_32;
         dut_res.res_out_16_0 = top_->io_res_out_16_0;
         dut_res.res_out_16_1 = top_->io_res_out_16_1;
-        return test.check_result(dut_res);
+        bool result = test.check_result(dut_res);
+        
+        // 如果测试失败，多跑一个周期来记录更多波形信息
+        if (!result) {
+            printf("Test failed! Running one more cycle for better waveform debugging...\n");
+            single_cycle();
+        }
+        
+        return result;
     } else {
         printf("Timeout waiting for valid_out\n");
         return false;
