@@ -76,6 +76,8 @@ class FAdd_16_32(
 
   val is_subnorm_16 = exp_is_0 zip frac_is_0_16 map {case (is_0, is_0_frac) => is_0 && !is_0_frac}
   val is_subnorm_32 = exp_is_0.drop(2) zip frac_is_0_32 map {case (is_0, is_0_frac) => is_0 && !is_0_frac}
+  val is_zero_16 = exp_is_0 zip frac_is_0_16 map {case (is_0, is_0_frac) => is_0 && is_0_frac}
+  val is_zero_32 = exp_is_0.drop(2) zip frac_is_0_32 map {case (is_0, is_0_frac) => is_0 && is_0_frac}
   val is_inf_16 = exp_is_all1s zip frac_is_0_16 map {case (is_all1s, is_0_frac) => is_all1s && is_0_frac}
   val is_inf_32 = exp_is_all1s.drop(2) zip frac_is_0_32 map {case (is_all1s, is_0_frac) => is_all1s && is_0_frac}
   val is_nan_16 = exp_is_all1s zip frac_is_0_16 map {case (is_all1s, is_0_frac) => is_all1s && !is_0_frac}
@@ -105,6 +107,8 @@ class FAdd_16_32(
   fadd_extSig_fp19.io.valid_in := io.valid_in
   fadd_extSig_fp19.io.a := Cat(sign_low_a, exp_adjust_subnorm(0), sig_adjust_subnorm_16(0), 0.U(ExtendedWidthFp19.W))
   fadd_extSig_fp19.io.b := Cat(sign_low_b, exp_adjust_subnorm(1), sig_adjust_subnorm_16(1), 0.U(ExtendedWidthFp19.W))
+  fadd_extSig_fp19.io.a_is_zero := is_zero_16(0)
+  fadd_extSig_fp19.io.b_is_zero := is_zero_16(1)
   fadd_extSig_fp19.io.a_is_inf := is_inf_16(0)
   fadd_extSig_fp19.io.b_is_inf := is_inf_16(1)
   fadd_extSig_fp19.io.a_is_nan := is_nan_16(0)
@@ -116,6 +120,8 @@ class FAdd_16_32(
   val sig_adjust_subnorm_high_b = Mux(is_16, sig_adjust_subnorm_16(3) ## 0.U(13.W), sig_adjust_subnorm_32(1))
   fadd_extSig_fp32.io.a := Cat(sign_high_a, exp_adjust_subnorm(2), sig_adjust_subnorm_high_a, 0.U(ExtendedWidthFp32.W))
   fadd_extSig_fp32.io.b := Cat(sign_high_b, exp_adjust_subnorm(3), sig_adjust_subnorm_high_b, 0.U(ExtendedWidthFp32.W))
+  fadd_extSig_fp32.io.a_is_zero := Mux(is_16, is_zero_16(2), is_zero_32(0))
+  fadd_extSig_fp32.io.b_is_zero := Mux(is_16, is_zero_16(3), is_zero_32(1))
   fadd_extSig_fp32.io.a_is_inf := Mux(is_16, is_inf_16(2), is_inf_32(0))
   fadd_extSig_fp32.io.b_is_inf := Mux(is_16, is_inf_16(3), is_inf_32(1))
   fadd_extSig_fp32.io.a_is_nan := Mux(is_16, is_nan_16(2), is_nan_32(0))

@@ -31,6 +31,7 @@ class FAdd_extSig(
   val io = IO(new Bundle {
     val valid_in = Input(Bool())
     val a, b = Input(UInt((1 + ExpWidth + SigWidth + ExtendedWidth).W))
+    val a_is_zero, b_is_zero = Input(Bool())
     val a_is_inf, b_is_inf = Input(Bool())
     val a_is_nan, b_is_nan = Input(Bool())
     val res = Output(UInt((1 + ExpWidth + SigWidth + ExtendedWidth + 1).W))
@@ -108,13 +109,17 @@ class FAdd_extSig(
   //  Below is the second stage: S1 (pipeline 1)
   //----------------------------------------------
   io.valid_out := RegNext(io.valid_in)
+  val a_is_zero_S1 = RegEnable(io.a_is_zero, io.valid_in)
+  val b_is_zero_S1 = RegEnable(io.b_is_zero, io.valid_in)
+  val a_in_S1 = RegEnable(io.a, io.valid_in)
+  val b_in_S1 = RegEnable(io.b, io.valid_in)
   val sign_a_S1 = RegEnable(sign_a, io.valid_in)
   val sign_b_S1 = RegEnable(sign_b, io.valid_in)
   val exp_a_S1 = RegEnable(exp_a, io.valid_in)
   val exp_b_S1 = RegEnable(exp_b, io.valid_in)
   val abs_a_gt_b_S1 = RegEnable(abs_a_gt_b, io.valid_in)
-  val adderIn_a_S1 = RegEnable(adderIn_a, io.valid_in)
-  val adderIn_b_S1 = RegEnable(adderIn_b, io.valid_in)
+  val adderIn_a_S1 = 0.U(1.W) ## RegEnable(adderIn_a, io.valid_in)
+  val adderIn_b_S1 = 0.U(1.W) ## RegEnable(adderIn_b, io.valid_in)
   val exp_a_gte_b_S1 = RegEnable(exp_a_gte_b, io.valid_in)
 
   val a_n_b_n = sign_a_S1 && sign_b_S1  // a < 0 && b < 0
@@ -130,7 +135,7 @@ class FAdd_extSig(
   val adderIn_cin = a_b_diffSign
   
   // ---- Addition ----
-  val adderOut_temp = Cat(false.B, adderIn_a_inv, adderIn_cin) + Cat(false.B, adderIn_b_inv, adderIn_cin)
+  val adderOut_temp = Cat(adderIn_a_inv, adderIn_cin) + Cat(adderIn_b_inv, adderIn_cin)
   //  2 + (SigWidth - 1) + ExtendedWidth
   val adderOut = adderOut_temp(SigWidth + ExtendedWidth + 1, 1) // SigWidth + ExtendedWidth + 1 bits
   
@@ -181,8 +186,9 @@ class FAdd_extSig(
 
   val exp_adderOut_shifted = exp_adderOut - exp_adderOut_tobe_subtracted
 
-  //             1 + ExpWidth + (SigWidth + ExtendedWidth + 1)
-  io.res := Cat(sign_adderOut, exp_adderOut_shifted, sig_adderOut_shifted)
+  //                                                           1 + ExpWidth + (SigWidth + ExtendedWidth + 1)
+  io.res := Mux(!a_is_zero_S1 && !b_is_zero_S1, Cat(sign_adderOut, exp_adderOut_shifted, sig_adderOut_shifted),
+                Cat(Mux(a_is_zero_S1, b_in_S1, a_in_S1), false.B))
 
   io.res_is_nan := RegEnable(res_is_nan_S0, io.valid_in)
   io.res_is_posInf := RegEnable(res_is_posInf_S0, io.valid_in) || adderOut_is_inf && !sign_adderOut
