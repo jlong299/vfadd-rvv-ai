@@ -92,8 +92,8 @@ TestCase::TestCase(const FADD_Operands_FP16_Widen& ops_widen, ErrorType error_ty
       is_fp32(false), is_fp16(true), is_bf16(false), is_widen(true)
 {
     // 存储输入数据的位表示
-    a_fp32_bits = ((uint32_t)ops_widen.a_hex);  // For DUT input
-    b_fp32_bits = ((uint32_t)ops_widen.b_hex);        // For DUT input
+    a_fp32_bits = ((uint32_t)ops_widen.a_hex) << 16;  // FP16 a扩展到FP32格式 (左移16位)
+    b_fp32_bits = ((uint32_t)ops_widen.b_hex) << 16;  // FP16 b扩展到FP32格式 (左移16位)
     
     // 转换为浮点数用于计算
     op_fp.a = fp16_to_fp32(ops_widen.a_hex);
@@ -113,8 +113,8 @@ TestCase::TestCase(const FADD_Operands_BF16_Widen& ops_widen, ErrorType error_ty
       is_fp32(false), is_fp16(false), is_bf16(true), is_widen(true)
 {
     // 存储输入数据的位表示
-    a_fp32_bits = ((uint32_t)ops_widen.a_hex);
-    b_fp32_bits = ((uint32_t)ops_widen.b_hex);
+    a_fp32_bits = ((uint32_t)ops_widen.a_hex) << 16;  // BF16 a扩展到FP32格式 (左移16位)
+    b_fp32_bits = ((uint32_t)ops_widen.b_hex) << 16;  // BF16 b扩展到FP32格式 (左移16位)
     
     // 转换为浮点数用于计算
     op_fp.a = bf16_to_fp32(ops_widen.a_hex);

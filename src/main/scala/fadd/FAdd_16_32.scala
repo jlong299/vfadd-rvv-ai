@@ -100,26 +100,26 @@ class FAdd_16_32(
     sig_adjust_subnorm_32(i) := Mux(is_subnorm(i+2), 0.U(1.W), 1.U(1.W)) ## frac_in_32(i)
   }
 
-  //---- fp19 adder (high) + fp32 adder (low) ----
+  //---- fp19 adder (low) + fp32 adder (low) ----
   val fadd_extSig_fp19 = Module(new FAdd_extSig(ExpWidth = 8, SigWidth = SigWidthFp19, ExtendedWidth = ExtendedWidthFp19, ExtAreZeros = true))
   fadd_extSig_fp19.io.valid_in := io.valid_in
-  fadd_extSig_fp19.io.a := Cat(sign_high_a, exp_adjust_subnorm(2), sig_adjust_subnorm_16(2), 0.U(ExtendedWidthFp19.W))
-  fadd_extSig_fp19.io.b := Cat(sign_high_b, exp_adjust_subnorm(3), sig_adjust_subnorm_16(3), 0.U(ExtendedWidthFp19.W))
-  fadd_extSig_fp19.io.a_is_inf := is_inf_16(2)
-  fadd_extSig_fp19.io.b_is_inf := is_inf_16(3)
-  fadd_extSig_fp19.io.a_is_nan := is_nan_16(2)
-  fadd_extSig_fp19.io.b_is_nan := is_nan_16(3)
+  fadd_extSig_fp19.io.a := Cat(sign_low_a, exp_adjust_subnorm(0), sig_adjust_subnorm_16(0), 0.U(ExtendedWidthFp19.W))
+  fadd_extSig_fp19.io.b := Cat(sign_low_b, exp_adjust_subnorm(1), sig_adjust_subnorm_16(1), 0.U(ExtendedWidthFp19.W))
+  fadd_extSig_fp19.io.a_is_inf := is_inf_16(0)
+  fadd_extSig_fp19.io.b_is_inf := is_inf_16(1)
+  fadd_extSig_fp19.io.a_is_nan := is_nan_16(0)
+  fadd_extSig_fp19.io.b_is_nan := is_nan_16(1)
   
   val fadd_extSig_fp32 = Module(new FAdd_extSig(ExpWidth = 8, SigWidth = SigWidthFp32, ExtendedWidth = ExtendedWidthFp32, ExtAreZeros = true))
   fadd_extSig_fp32.io.valid_in := io.valid_in
-  val sig_adjust_subnorm_low_a = Mux(is_16, sig_adjust_subnorm_16(0) ## 0.U(13.W), sig_adjust_subnorm_32(0))
-  val sig_adjust_subnorm_low_b = Mux(is_16, sig_adjust_subnorm_16(1) ## 0.U(13.W), sig_adjust_subnorm_32(1))
-  fadd_extSig_fp32.io.a := Cat(sign_low_a, exp_adjust_subnorm(0), sig_adjust_subnorm_low_a, 0.U(ExtendedWidthFp32.W))
-  fadd_extSig_fp32.io.b := Cat(sign_low_b, exp_adjust_subnorm(1), sig_adjust_subnorm_low_b, 0.U(ExtendedWidthFp32.W))
-  fadd_extSig_fp32.io.a_is_inf := Mux(is_16, is_inf_16(0), is_inf_32(0))
-  fadd_extSig_fp32.io.b_is_inf := Mux(is_16, is_inf_16(1), is_inf_32(1))
-  fadd_extSig_fp32.io.a_is_nan := Mux(is_16, is_nan_16(0), is_nan_32(0))
-  fadd_extSig_fp32.io.b_is_nan := Mux(is_16, is_nan_16(1), is_nan_32(1))
+  val sig_adjust_subnorm_high_a = Mux(is_16, sig_adjust_subnorm_16(2) ## 0.U(13.W), sig_adjust_subnorm_32(0))
+  val sig_adjust_subnorm_high_b = Mux(is_16, sig_adjust_subnorm_16(3) ## 0.U(13.W), sig_adjust_subnorm_32(1))
+  fadd_extSig_fp32.io.a := Cat(sign_high_a, exp_adjust_subnorm(2), sig_adjust_subnorm_high_a, 0.U(ExtendedWidthFp32.W))
+  fadd_extSig_fp32.io.b := Cat(sign_high_b, exp_adjust_subnorm(3), sig_adjust_subnorm_high_b, 0.U(ExtendedWidthFp32.W))
+  fadd_extSig_fp32.io.a_is_inf := Mux(is_16, is_inf_16(2), is_inf_32(0))
+  fadd_extSig_fp32.io.b_is_inf := Mux(is_16, is_inf_16(3), is_inf_32(1))
+  fadd_extSig_fp32.io.a_is_nan := Mux(is_16, is_nan_16(2), is_nan_32(0))
+  fadd_extSig_fp32.io.b_is_nan := Mux(is_16, is_nan_16(3), is_nan_32(1))
 
   //-----------------------------------------
   //---- Second stage: S1 (pipeline 1)   ----
@@ -128,16 +128,16 @@ class FAdd_16_32(
   val res_extSig_fp19_S1 = fadd_extSig_fp19.io.res
   val res_extSig_fp32_S1 = fadd_extSig_fp32.io.res
 
-  val res_is_posInf_high_S1 = fadd_extSig_fp19.io.res_is_posInf
-  val res_is_negInf_high_S1 = fadd_extSig_fp19.io.res_is_negInf
-  val res_is_nan_high_S1 = fadd_extSig_fp19.io.res_is_nan
-  val res_is_posInf_low_S1 = fadd_extSig_fp32.io.res_is_posInf
-  val res_is_negInf_low_S1 = fadd_extSig_fp32.io.res_is_negInf
-  val res_is_nan_low_S1 = fadd_extSig_fp32.io.res_is_nan
+  val res_is_posInf_low_S1 = fadd_extSig_fp19.io.res_is_posInf
+  val res_is_negInf_low_S1 = fadd_extSig_fp19.io.res_is_negInf
+  val res_is_nan_low_S1 = fadd_extSig_fp19.io.res_is_nan
+  val res_is_posInf_high_S1 = fadd_extSig_fp32.io.res_is_posInf
+  val res_is_negInf_high_S1 = fadd_extSig_fp32.io.res_is_negInf
+  val res_is_nan_high_S1 = fadd_extSig_fp32.io.res_is_nan
 
-  val res_is_32_S1 = RegEnable(res_is_32, valid_S1)
-  val res_is_bf16_S1 = RegEnable(res_is_bf16, valid_S1)
-  val res_is_fp16_S1 = RegEnable(res_is_fp16, valid_S1)
+  val res_is_32_S1 = RegEnable(res_is_32, io.valid_in)
+  val res_is_bf16_S1 = RegEnable(res_is_bf16, io.valid_in)
+  val res_is_fp16_S1 = RegEnable(res_is_fp16, io.valid_in)
 
   //-----------------------------------------
   //---- Third stage: S2 (pipeline 2)   ----
@@ -162,88 +162,88 @@ class FAdd_16_32(
 
   //---- Rouding (only RNE) of adder out ----
   //---- (1) Calculate LSB, Guard bit, Sticky bit, and significand
-  // High fp16/bf16
-  val lsb_adderOut_high_fp16 = sig_res_extSig_fp19(ExtendedWidthFp19 + 1)
-  val g_adderOut_high_fp16 = sig_res_extSig_fp19(ExtendedWidthFp19)
-  val s_adderOut_high_fp16 = sig_res_extSig_fp19(ExtendedWidthFp19 - 1, 0).orR
-  val sig_adderOut_high_fp16 = sig_res_extSig_fp19.head(SigWidthFp19)
+  // Low fp16/bf16
+  val lsb_adderOut_low_fp16 = sig_res_extSig_fp19(ExtendedWidthFp19 + 1)
+  val g_adderOut_low_fp16 = sig_res_extSig_fp19(ExtendedWidthFp19)
+  val s_adderOut_low_fp16 = sig_res_extSig_fp19(ExtendedWidthFp19 - 1, 0).orR
+  val sig_adderOut_low_fp16 = sig_res_extSig_fp19.head(SigWidthFp19)
 
-  val lsb_adderOut_high_bf16 = sig_res_extSig_fp19(ExtendedWidthFp19 + 1 + 3)
-  val g_adderOut_high_bf16 = sig_res_extSig_fp19(ExtendedWidthFp19 + 3)
-  val s_adderOut_high_bf16 = sig_res_extSig_fp19(ExtendedWidthFp19 + 3 - 1, ExtendedWidthFp19).orR ||
-                             s_adderOut_high_fp16
-  val sig_adderOut_high_bf16 = sig_res_extSig_fp19.head(SigWidthFp19 - 3)
+  val lsb_adderOut_low_bf16 = sig_res_extSig_fp19(ExtendedWidthFp19 + 1 + 3)
+  val g_adderOut_low_bf16 = sig_res_extSig_fp19(ExtendedWidthFp19 + 3)
+  val s_adderOut_low_bf16 = sig_res_extSig_fp19(ExtendedWidthFp19 + 3 - 1, ExtendedWidthFp19).orR ||
+                             s_adderOut_low_fp16
+  val sig_adderOut_low_bf16 = sig_res_extSig_fp19.head(SigWidthFp19 - 3)
 
-  // Low fp32/fp16/bf16
-  val lsb_adderOut_low_fp32 = sig_res_extSig_fp32(ExtendedWidthFp32 + 1)
-  val g_adderOut_low_fp32 = sig_res_extSig_fp32(ExtendedWidthFp32)
-  val s_adderOut_low_fp32 = sig_res_extSig_fp32(ExtendedWidthFp32 - 1, 0).orR
-  val sig_adderOut_low_fp32 = sig_res_extSig_fp32.head(SigWidthFp32)
+  // High fp32/fp16/bf16
+  val lsb_adderOut_high_fp32 = sig_res_extSig_fp32(ExtendedWidthFp32 + 1)
+  val g_adderOut_high_fp32 = sig_res_extSig_fp32(ExtendedWidthFp32)
+  val s_adderOut_high_fp32 = sig_res_extSig_fp32(ExtendedWidthFp32 - 1, 0).orR
+  val sig_adderOut_high_fp32 = sig_res_extSig_fp32.head(SigWidthFp32)
 
-  val lsb_adderOut_low_fp16 = sig_res_extSig_fp32(ExtendedWidthFp32 + 14)
-  val g_adderOut_low_fp16 = sig_res_extSig_fp32(ExtendedWidthFp32 + 13)
-  val s_adderOut_low_fp16 = sig_res_extSig_fp32(ExtendedWidthFp32 + 13 - 1, ExtendedWidthFp32).orR ||
-                            s_adderOut_low_fp32
-  val sig_adderOut_low_fp16 = sig_res_extSig_fp32.head(SigWidthFp32 - 13)
+  val lsb_adderOut_high_fp16 = sig_res_extSig_fp32(ExtendedWidthFp32 + 14)
+  val g_adderOut_high_fp16 = sig_res_extSig_fp32(ExtendedWidthFp32 + 13)
+  val s_adderOut_high_fp16 = sig_res_extSig_fp32(ExtendedWidthFp32 + 13 - 1, ExtendedWidthFp32).orR ||
+                            s_adderOut_high_fp32
+  val sig_adderOut_high_fp16 = sig_res_extSig_fp32.head(SigWidthFp32 - 13)
 
-  val lsb_adderOut_low_bf16 = sig_res_extSig_fp32(ExtendedWidthFp32 + 14 + 3)
-  val g_adderOut_low_bf16 = sig_res_extSig_fp32(ExtendedWidthFp32 + 13 + 3)
-  val s_adderOut_low_bf16 = sig_res_extSig_fp32(ExtendedWidthFp32 + 13 + 2, ExtendedWidthFp32 + 13).orR ||
-                            s_adderOut_low_fp16
-  val sig_adderOut_low_bf16 = sig_res_extSig_fp32.head(SigWidthFp32 - 13 - 3)
+  val lsb_adderOut_high_bf16 = sig_res_extSig_fp32(ExtendedWidthFp32 + 14 + 3)
+  val g_adderOut_high_bf16 = sig_res_extSig_fp32(ExtendedWidthFp32 + 13 + 3)
+  val s_adderOut_high_bf16 = sig_res_extSig_fp32(ExtendedWidthFp32 + 13 + 2, ExtendedWidthFp32 + 13).orR ||
+                            s_adderOut_high_fp16
+  val sig_adderOut_high_bf16 = sig_res_extSig_fp32.head(SigWidthFp32 - 13 - 3)
   
   //---- (2) Calculate final significand and exponent of result ----
-  // high fp16/bf16
-  val rnd_cin_high_fp16 = Mux(!g_adderOut_high_fp16, false.B,
-                          Mux(s_adderOut_high_fp16, true.B, lsb_adderOut_high_fp16))
-  val rnd_cin_high_bf16 = Mux(!g_adderOut_high_bf16, false.B,
-                          Mux(s_adderOut_high_bf16, true.B, lsb_adderOut_high_bf16))
-  val sig_res_high_tmp = sig_adderOut_high_fp16 +&
-            Mux(res_is_fp16_S2, rnd_cin_high_fp16.asUInt, rnd_cin_high_bf16.asUInt << 3) // SigWidthFp19 + 1 bits
-  val sig_res_high = Mux(sig_res_high_tmp(SigWidthFp19),
-                         sig_res_high_tmp(SigWidthFp19, 1), sig_res_high_tmp(SigWidthFp19 - 1, 0)) // SigWidthFp19 bits
-  val exp_adjust_res_high = exp_res_extSig_fp19 + sig_res_high_tmp(SigWidthFp19).asUInt // 8 bits
-  val isInf_res_high = sig_res_high_tmp(SigWidthFp19) &&
-            Mux(res_is_fp16_S2, exp_adjust_res_high === "b11111110".U, exp_adjust_res_high === "b00011110".U)
-  val exp_res_high = Mux(exp_adjust_res_high === 1.U && !sig_res_high(SigWidthFp19 - 1), 0.U, exp_adjust_res_high) // 8 bits
-
-  // Low fp32/fp16/bf16
-  val rnd_cin_low_fp32 = Mux(!g_adderOut_low_fp32, false.B,
-                          Mux(s_adderOut_low_fp32, true.B, lsb_adderOut_low_fp32))
+  // Low fp16/bf16
   val rnd_cin_low_fp16 = Mux(!g_adderOut_low_fp16, false.B,
                           Mux(s_adderOut_low_fp16, true.B, lsb_adderOut_low_fp16))
   val rnd_cin_low_bf16 = Mux(!g_adderOut_low_bf16, false.B,
                           Mux(s_adderOut_low_bf16, true.B, lsb_adderOut_low_bf16))
-  val sig_res_low_tmp = sig_adderOut_low_fp32 +& Mux(res_is_32_S2, rnd_cin_low_fp32.asUInt,
-            Mux(res_is_fp16_S2, rnd_cin_low_fp16.asUInt << 13, rnd_cin_low_bf16.asUInt << 16)) // SigWidthFp32 + 1 bits
-  val sig_res_low = Mux(sig_res_low_tmp(SigWidthFp32),
-                        sig_res_low_tmp(SigWidthFp32, 1), sig_res_low_tmp(SigWidthFp32 - 1, 0)) // SigWidthFp32 bits
-  val exp_adjust_res_low = exp_res_extSig_fp32 + sig_res_low_tmp(SigWidthFp32).asUInt // 8 bits
-  val isInf_res_low = sig_res_low_tmp(SigWidthFp32) &&
-            Mux(!res_is_bf16_S2, exp_adjust_res_low === "b11111110".U, exp_adjust_res_low === "b00011110".U)
-  val exp_res_low = Mux(exp_adjust_res_low === 1.U && !sig_res_low(SigWidthFp32 - 1), 0.U, exp_adjust_res_low) // 8 bits
+  val sig_res_low_tmp = sig_adderOut_low_fp16 +&
+            Mux(res_is_fp16_S2, rnd_cin_low_fp16.asUInt, rnd_cin_low_bf16.asUInt << 3) // SigWidthFp19 + 1 bits
+  val sig_res_low = Mux(sig_res_low_tmp(SigWidthFp19),
+                         sig_res_low_tmp(SigWidthFp19, 1), sig_res_low_tmp(SigWidthFp19 - 1, 0)) // SigWidthFp19 bits
+  val exp_adjust_res_low = exp_res_extSig_fp19 + sig_res_low_tmp(SigWidthFp19).asUInt // 8 bits
+  val isInf_res_low = sig_res_low_tmp(SigWidthFp19) &&
+            Mux(res_is_fp16_S2, exp_adjust_res_low === "b11111110".U, exp_adjust_res_low === "b00011110".U)
+  val exp_res_low = Mux(exp_adjust_res_low === 1.U && !sig_res_low(SigWidthFp19 - 1), 0.U, exp_adjust_res_low) // 8 bits
+
+  // High fp32/fp16/bf16
+  val rnd_cin_high_fp32 = Mux(!g_adderOut_high_fp32, false.B,
+                          Mux(s_adderOut_high_fp32, true.B, lsb_adderOut_high_fp32))
+  val rnd_cin_high_fp16 = Mux(!g_adderOut_high_fp16, false.B,
+                          Mux(s_adderOut_high_fp16, true.B, lsb_adderOut_high_fp16))
+  val rnd_cin_high_bf16 = Mux(!g_adderOut_high_bf16, false.B,
+                          Mux(s_adderOut_high_bf16, true.B, lsb_adderOut_high_bf16))
+  val sig_res_high_tmp = sig_adderOut_high_fp32 +& Mux(res_is_32_S2, rnd_cin_high_fp32.asUInt,
+            Mux(res_is_fp16_S2, rnd_cin_high_fp16.asUInt << 13, rnd_cin_high_bf16.asUInt << 16)) // SigWidthFp32 + 1 bits
+  val sig_res_high = Mux(sig_res_high_tmp(SigWidthFp32),
+                        sig_res_high_tmp(SigWidthFp32, 1), sig_res_high_tmp(SigWidthFp32 - 1, 0)) // SigWidthFp32 bits
+  val exp_adjust_res_high = exp_res_extSig_fp32 + sig_res_high_tmp(SigWidthFp32).asUInt // 8 bits
+  val isInf_res_high = sig_res_high_tmp(SigWidthFp32) &&
+            Mux(!res_is_bf16_S2, exp_adjust_res_high === "b11111110".U, exp_adjust_res_high === "b00011110".U)
+  val exp_res_high = Mux(exp_adjust_res_high === 1.U && !sig_res_high(SigWidthFp32 - 1), 0.U, exp_adjust_res_high) // 8 bits
 
   //-----------------------------------------
   //---- Final result -----
   //-----------------------------------------
-  val resFinal_fp16_high_tmp = Cat(sign_res_extSig_fp19, exp_res_high(4, 0), sig_res_high(SigWidthFp19 - 2, 0))
-  val resFinal_bf16_high_tmp = Cat(sign_res_extSig_fp19, exp_res_high, sig_res_high(SigWidthFp19 - 2, 3))
-  val resFinal_32_low_tmp = Cat(sign_res_extSig_fp32, exp_res_low, sig_res_low(SigWidthFp32 - 2, 0))
-  val resFinal_fp16_low_tmp = Cat(sign_res_extSig_fp32, exp_res_low(4, 0), sig_res_low(SigWidthFp32 - 2, 13))
-  val resFinal_bf16_low_tmp = Cat(sign_res_extSig_fp32, exp_res_low, sig_res_low(SigWidthFp32 - 2, 16))
+  val resFinal_fp16_low_tmp = Cat(sign_res_extSig_fp19, exp_res_low(4, 0), sig_res_low(SigWidthFp19 - 2, 0))
+  val resFinal_bf16_low_tmp = Cat(sign_res_extSig_fp19, exp_res_low, sig_res_low(SigWidthFp19 - 2, 3))
+  val resFinal_32_high_tmp = Cat(sign_res_extSig_fp32, exp_res_high, sig_res_high(SigWidthFp32 - 2, 0))
+  val resFinal_fp16_high_tmp = Cat(sign_res_extSig_fp32, exp_res_high(4, 0), sig_res_high(SigWidthFp32 - 2, 13))
+  val resFinal_bf16_high_tmp = Cat(sign_res_extSig_fp32, exp_res_high, sig_res_high(SigWidthFp32 - 2, 16))
 
   val resFinal_is_posInf_high = isInf_res_high || res_is_posInf_high_S2
   val resFinal_is_negInf_high = isInf_res_high || res_is_negInf_high_S2
   val resFinal_is_posInf_low = isInf_res_low || res_is_posInf_low_S2
   val resFinal_is_negInf_low = isInf_res_low || res_is_negInf_low_S2
 
-  val resFinal_32_low = Mux(res_is_nan_low_S2, "h7FC00000".U, Mux(resFinal_is_posInf_low, "h7F800000".U, Mux(resFinal_is_negInf_low, "hFF800000".U, resFinal_32_low_tmp)))
-  val resFinal_bf16_low = Mux(res_is_nan_low_S2, "h7FC0".U, Mux(resFinal_is_posInf_low, "h7F80".U, Mux(resFinal_is_negInf_low, "hFF80".U, resFinal_bf16_low_tmp)))
-  val resFinal_fp16_low = Mux(res_is_nan_low_S2, "h7E00".U, Mux(resFinal_is_posInf_low, "h7C00".U, Mux(resFinal_is_negInf_low, "hFC00".U, resFinal_fp16_low_tmp)))
+  val resFinal_32_high = Mux(res_is_nan_high_S2, "h7FC00000".U, Mux(resFinal_is_posInf_high, "h7F800000".U, Mux(resFinal_is_negInf_high, "hFF800000".U, resFinal_32_high_tmp)))
   val resFinal_bf16_high = Mux(res_is_nan_high_S2, "h7FC0".U, Mux(resFinal_is_posInf_high, "h7F80".U, Mux(resFinal_is_negInf_high, "hFF80".U, resFinal_bf16_high_tmp)))
   val resFinal_fp16_high = Mux(res_is_nan_high_S2, "h7E00".U, Mux(resFinal_is_posInf_high, "h7C00".U, Mux(resFinal_is_negInf_high, "hFC00".U, resFinal_fp16_high_tmp)))
+  val resFinal_bf16_low = Mux(res_is_nan_low_S2, "h7FC0".U, Mux(resFinal_is_posInf_low, "h7F80".U, Mux(resFinal_is_negInf_low, "hFF80".U, resFinal_bf16_low_tmp)))
+  val resFinal_fp16_low = Mux(res_is_nan_low_S2, "h7E00".U, Mux(resFinal_is_posInf_low, "h7C00".U, Mux(resFinal_is_negInf_low, "hFC00".U, resFinal_fp16_low_tmp)))
 
-  io.res := Mux(res_is_32_S2, resFinal_32_low,
+  io.res := Mux(res_is_32_S2, resFinal_32_high,
             Mux(res_is_fp16_S2, Cat(resFinal_fp16_high, resFinal_fp16_low),
                 Cat(resFinal_bf16_high, resFinal_bf16_low)))
   io.valid_out := valid_S2
