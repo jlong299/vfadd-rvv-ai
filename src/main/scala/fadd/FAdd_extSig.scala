@@ -30,6 +30,7 @@ class FAdd_extSig(
 ) extends Module {
   val io = IO(new Bundle {
     val valid_in = Input(Bool())
+    val is_fp16 = Input(Bool()) // Inf of 8-bit exp: fp16: 00011111, bf16: 11111111
     val a, b = Input(UInt((1 + ExpWidth + SigWidth + ExtendedWidth).W))
     val a_is_zero, b_is_zero = Input(Bool())
     val a_is_inf, b_is_inf = Input(Bool())
@@ -109,6 +110,7 @@ class FAdd_extSig(
   //  Below is the second stage: S1 (pipeline 1)
   //----------------------------------------------
   io.valid_out := RegNext(io.valid_in)
+  val is_fp16_S1 = RegEnable(io.is_fp16, io.valid_in)
   val a_is_zero_S1 = RegEnable(io.a_is_zero, io.valid_in)
   val b_is_zero_S1 = RegEnable(io.b_is_zero, io.valid_in)
   val a_in_S1 = RegEnable(io.a, io.valid_in)
@@ -154,7 +156,7 @@ class FAdd_extSig(
   val lzd_adderOut = LZD(adderOut.tail(2))
   when (adderOut_int_part(1)) { // integer part >= 2
     adderOut_is_subnorm := false.B
-    adderOut_is_inf := exp_adderOut === ~1.U(ExpWidth.W)
+    adderOut_is_inf := exp_adderOut === Mux(is_fp16_S1, "b00011110".U, ~1.U(ExpWidth.W))
     // 由于只进行左移，所以整数部分大于2时，不移动。整数部分为1时，左移一位。
     // 最终sig的小数点在最高位之后，即 x.x (SigWidth-1) ExtendedWidth
     shiftLeft_amount := 0.U
