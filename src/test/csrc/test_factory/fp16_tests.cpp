@@ -23,54 +23,55 @@ void add_fp16_tests(std::vector<TestCase>& tests) {
     tests.push_back(TestCase(FADD_Operands_Hex_16{0x4d6f, 0x1ea8}, FADD_Operands_Hex_16{0x5455, 0xe39c}, ErrorType::Precise));
     tests.push_back(TestCase(FADD_Operands_Hex_16{0x668, 0x5b00}, FADD_Operands_Hex_16{0x8f63, 0x575}, ErrorType::Precise));
     tests.push_back(TestCase(FADD_Operands_Hex_16{0xdcd9, 0x1054}, FADD_Operands_Hex_16{0xf800, 0x251b}, ErrorType::Precise));
+    tests.push_back(TestCase(FADD_Operands_Hex_16{0x1f00, 0x4163}, FADD_Operands_Hex_16{0x7445, 0x5adb}, ErrorType::ULP));
 
     printf("\n---- Random tests for FP16 ----\n");
     int num_random_tests_16 = 200;
-    ErrorType errorType_fp16 = ErrorType::ULP;
+    ErrorType default_error_type = ErrorType::ULP;
     // ---- FP16 任意值随机测试 ----
     for (int i = 0; i < num_random_tests_16; ++i) {
         FADD_Operands_Hex_16 ops1 = {gen_any_fp16(), gen_any_fp16()};
         FADD_Operands_Hex_16 ops2 = {gen_any_fp16(), gen_any_fp16()};
-        tests.push_back(TestCase(ops1, ops2, errorType_fp16));
+        tests.push_back(TestCase(ops1, ops2, default_error_type));
     }
     // ---- 进行不同指数范围的FP16随机测试 ----
     // 小数范围测试：指数[-15, -5]
     for (int i = 0; i < num_random_tests_16; ++i) {
         FADD_Operands_Hex_16 ops1 = {gen_random_fp16(-15, -5), gen_random_fp16(-15, -5)};
         FADD_Operands_Hex_16 ops2 = {gen_random_fp16(-15, -5), gen_random_fp16(-15, -5)};
-        tests.push_back(TestCase(ops1, ops2, errorType_fp16));
+        tests.push_back(TestCase(ops1, ops2, default_error_type));
     }
     // 中等数值范围测试：指数[-5, 5]
     for (int i = 0; i < num_random_tests_16; ++i) {
         FADD_Operands_Hex_16 ops1 = {gen_random_fp16(-5, 5), gen_random_fp16(-5, 5)};
         FADD_Operands_Hex_16 ops2 = {gen_random_fp16(-5, 5), gen_random_fp16(-5, 5)};
-        tests.push_back(TestCase(ops1, ops2, errorType_fp16));
+        tests.push_back(TestCase(ops1, ops2, default_error_type));
     }
     // 大数范围测试：指数[5, 15]
     for (int i = 0; i < num_random_tests_16; ++i) {
         FADD_Operands_Hex_16 ops1 = {gen_random_fp16(5, 15), gen_random_fp16(5, 15)};
         FADD_Operands_Hex_16 ops2 = {gen_random_fp16(5, 15), gen_random_fp16(5, 15)};
-        tests.push_back(TestCase(ops1, ops2, errorType_fp16));
+        tests.push_back(TestCase(ops1, ops2, default_error_type));
     }
     // 更多测试
     for (int i = 0; i < num_random_tests_16; ++i) {
         FADD_Operands_Hex_16 ops1 = {gen_random_fp16(-15, 15), gen_random_fp16(-15, 15)};
         FADD_Operands_Hex_16 ops2 = {gen_random_fp16(-15, 15), gen_random_fp16(-15, 15)};
-        tests.push_back(TestCase(ops1, ops2, errorType_fp16));
+        tests.push_back(TestCase(ops1, ops2, default_error_type));
     }
     for (int i = 0; i < num_random_tests_16; ++i) {
         FADD_Operands_Hex_16 ops1 = {gen_random_fp16(-15, -14), gen_random_fp16(-15, 15)};
         FADD_Operands_Hex_16 ops2 = {gen_random_fp16(-15, 15), gen_random_fp16(-15, -14)};
-        tests.push_back(TestCase(ops1, ops2, errorType_fp16));
+        tests.push_back(TestCase(ops1, ops2, default_error_type));
     }
     for (int i = 0; i < num_random_tests_16; ++i) {
         FADD_Operands_Hex_16 ops1 = {gen_random_fp16(-15, 15), gen_random_fp16(-15, -14)};
         FADD_Operands_Hex_16 ops2 = {gen_random_fp16(-15, 15), gen_random_fp16(-15, -14)};
-        tests.push_back(TestCase(ops1, ops2, errorType_fp16));
+        tests.push_back(TestCase(ops1, ops2, default_error_type));
     }
     for (int i = 0; i < num_random_tests_16; ++i) {
         FADD_Operands_Hex_16 ops1 = {gen_random_fp16(-15, -14), gen_random_fp16(-15, -14)};
         FADD_Operands_Hex_16 ops2 = {gen_random_fp16(-15, -14), gen_random_fp16(-15, -14)};
-        tests.push_back(TestCase(ops1, ops2, errorType_fp16));
+        tests.push_back(TestCase(ops1, ops2, default_error_type));
     }
 } 
