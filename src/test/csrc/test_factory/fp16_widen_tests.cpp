@@ -9,6 +9,7 @@ void add_fp16_widen_tests(std::vector<TestCase>& tests) {
     tests.push_back(TestCase(FADD_Operands_FP16_Widen{0xbc00, 0x4000}, ErrorType::Precise)); // -1.0 + 2.0 = 1.0
     tests.push_back(TestCase(FADD_Operands_FP16_Widen{0x3c00, 0xbc00}, ErrorType::Precise)); // 1.0 + -1.0 = 0.0
     tests.push_back(TestCase(FADD_Operands_FP16_Widen{0x0000, 0x4000}, ErrorType::Precise)); // 0.0 + 2.0 = 2.0
+    tests.push_back(TestCase(FADD_Operands_FP16_Widen{0x008e, 0x8000}, ErrorType::Precise)); // 0.00000846 + -0.00000000 = 0.00000846
   
     printf("\n---- Random tests for FP16 Widen ----\n");
     int num_random_tests_fp16_widen = 200;

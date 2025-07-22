@@ -83,17 +83,17 @@ class FAdd_16_32(
   val is_nan_16 = exp_is_all1s zip frac_is_0_16 map {case (is_all1s, is_0_frac) => is_all1s && !is_0_frac}
   val is_nan_32 = exp_is_all1s.drop(2) zip frac_is_0_32 map {case (is_all1s, is_0_frac) => is_all1s && !is_0_frac}
 
-  val is_subnorm = Mux(!res_is_32 || is_bf16, VecInit(is_subnorm_16),
-                   Mux(!widen, VecInit(Seq(false.B, false.B) ++ is_subnorm_32),
-                       VecInit.fill(4)(false.B)))
+  val is_subnorm = Mux(is_16, VecInit(is_subnorm_16), VecInit(Seq(false.B, false.B) ++ is_subnorm_32))
 
   //----   low_a, low_b, high_a, high_b = 0, 1, 2, 3   ----
   val exp_adjust_subnorm = Wire(Vec(4, UInt(8.W)))
-  for (i <- 0 until 2) {
-    exp_adjust_subnorm(i) := Mux(is_subnorm(i), 1.U, exp_in(i))
-  }
-  for (i <- 2 until 4) {
-    exp_adjust_subnorm(i) := Mux(is_subnorm(i), 1.U, Mux(is_fp16 && widen, exp_in(i) + (127 -15).U, exp_in(i)))
+  val is_fp16_widen = is_fp16 && widen
+  for (i <- 0 until 4) {
+    if (i < 2) {
+      exp_adjust_subnorm(i) := Mux(is_subnorm(i), 1.U, exp_in(i))
+    } else {
+      exp_adjust_subnorm(i) := Mux(is_subnorm(i), 1.U, exp_in(i)) + Mux(is_fp16_widen, (127 - 15).U, 0.U)
+    }
   }
   //  x.xxxxxxx000   bf16 (1 + 7 + "000")
   //  x.xxxxxxxxxx   fp16 (1 + 10)
