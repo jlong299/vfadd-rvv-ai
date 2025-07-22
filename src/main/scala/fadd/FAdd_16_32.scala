@@ -228,7 +228,7 @@ class FAdd_16_32(
                         sig_res_high_tmp(SigWidthFp32, 1), sig_res_high_tmp(SigWidthFp32 - 1, 0)) // SigWidthFp32 bits
   val exp_adjust_res_high = exp_res_extSig_fp32 + sig_res_high_tmp(SigWidthFp32).asUInt // 8 bits
   val isInf_res_high = sig_res_high_tmp(SigWidthFp32) &&
-            Mux(!res_is_bf16_S2, exp_adjust_res_high === "b11111110".U, exp_adjust_res_high === "b00011110".U)
+            Mux(!res_is_fp16_S2, exp_adjust_res_high === "b11111110".U, exp_adjust_res_high === "b00011110".U)
   val exp_res_high = Mux(exp_adjust_res_high === 1.U && !sig_res_high(SigWidthFp32 - 1), 0.U, exp_adjust_res_high) // 8 bits
 
   //-----------------------------------------

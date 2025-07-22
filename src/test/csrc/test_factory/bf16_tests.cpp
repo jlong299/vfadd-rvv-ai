@@ -37,6 +37,7 @@ void add_bf16_tests(std::vector<TestCase>& tests) {
     tests.push_back(TestCase(FADD_Operands_Hex_BF16{0x80e1, 0x80ed}, FADD_Operands_Hex_BF16{0x80cd, 0x806d}, ErrorType::ULP_or_RelativeError));
     tests.push_back(TestCase(FADD_Operands_Hex_BF16{0x80e1, 0x80ed}, FADD_Operands_Hex_BF16{0x80cd, 0x806d}, ErrorType::ULP));
     tests.push_back(TestCase(FADD_Operands_Hex_BF16{0xbf80, 0x0200}, FADD_Operands_Hex_BF16{0xbf80, 0x0200}, ErrorType::ULP));
+    tests.push_back(TestCase(FADD_Operands_Hex_BF16{0x0f00, 0x80cf}, FADD_Operands_Hex_BF16{0x0f00, 0x80cf}, ErrorType::Precise));
 
     printf("\n---- Random tests for BF16 ----\n");
     int num_random_tests_bf16 = 200;
