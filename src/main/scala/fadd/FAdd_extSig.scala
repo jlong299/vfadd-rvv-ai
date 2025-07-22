@@ -189,8 +189,9 @@ class FAdd_extSig(
   val exp_adderOut_shifted = exp_adderOut - exp_adderOut_tobe_subtracted
 
   //                                                           1 + ExpWidth + (SigWidth + ExtendedWidth + 1)
-  io.res := Mux(!a_is_zero_S1 && !b_is_zero_S1, Cat(sign_adderOut, exp_adderOut_shifted, sig_adderOut_shifted),
-                Cat(Mux(a_is_zero_S1, b_in_S1, a_in_S1), false.B))
+  io.res := Mux(adderOut_isZero, 0.U, 
+            Mux(!a_is_zero_S1 && !b_is_zero_S1, Cat(sign_adderOut, exp_adderOut_shifted, sig_adderOut_shifted),
+                Cat(Mux(a_is_zero_S1, b_in_S1, a_in_S1), false.B)))
 
   io.res_is_nan := RegEnable(res_is_nan_S0, io.valid_in)
   io.res_is_posInf := RegEnable(res_is_posInf_S0, io.valid_in) || adderOut_is_inf && !sign_adderOut

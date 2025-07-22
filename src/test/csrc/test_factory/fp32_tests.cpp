@@ -13,6 +13,8 @@ void add_fp32_tests(std::vector<TestCase>& tests) {
     tests.push_back(TestCase(FADD_Operands_Hex{0x42F60000, 0xC2860000}, ErrorType::Precise)); // 123.0f + -67.0f = 56.0f
     tests.push_back(TestCase(FADD_Operands_Hex{0x40A00000, 0x42F60000}, ErrorType::Precise)); // 5.0f + 123.0f = 128.0f
     tests.push_back(TestCase(FADD_Operands_Hex{0x40A00000, 0x40E00000}, ErrorType::Precise)); // 5.0f + 7.0f = 12.0f
+    tests.push_back(TestCase(FADD_Operands_Hex{0xBF800000, 0x3F800000}, ErrorType::Precise)); // (-1.0f) + 1.0f = 0.0f
+    tests.push_back(TestCase(FADD_Operands_Hex{0x3F800000, 0xBF800000}, ErrorType::Precise)); // 1.0f + (-1.0f) = 0.0f
     tests.push_back(TestCase(FADD_Operands_Hex{0xbf7f7861, 0x7bede2c6}, ErrorType::Precise));
     tests.push_back(TestCase(FADD_Operands_Hex{0x58800c00, 0x58800400}, ErrorType::Precise));
     tests.push_back(TestCase(FADD_Operands_Hex{0x816849E7, 0x00B6D8A2}, ErrorType::Precise));

@@ -17,6 +17,8 @@ void add_fp16_tests(std::vector<TestCase>& tests) {
     // 非规格化数测试
     tests.push_back(TestCase(FADD_Operands_Hex_16{0x0001, 0x4000}, FADD_Operands_Hex_16{0x03ff, 0x3c00}, ErrorType::Precise)); // 最小非规格化数 + 2.0 | 最大非规格化数 + 1.0
     tests.push_back(TestCase(FADD_Operands_Hex_16{0x3c00, 0x0001}, FADD_Operands_Hex_16{0x4000, 0x03ff}, ErrorType::Precise)); // 1.0 + 最小非规格化数 | 2.0 + 最大非规格化数
+    // 1.0 + -1.0 = 0.0 | -1.0 + 1.0 = 0.0
+    tests.push_back(TestCase(FADD_Operands_Hex_16{0x3c00, 0xbc00}, FADD_Operands_Hex_16{0xbc00, 0x3c00}, ErrorType::Precise));
     // 其他
     tests.push_back(TestCase(FADD_Operands_Hex_16{0x4d6f, 0x1ea8}, FADD_Operands_Hex_16{0x5455, 0xe39c}, ErrorType::Precise));
     tests.push_back(TestCase(FADD_Operands_Hex_16{0x668, 0x5b00}, FADD_Operands_Hex_16{0x8f63, 0x575}, ErrorType::Precise));
