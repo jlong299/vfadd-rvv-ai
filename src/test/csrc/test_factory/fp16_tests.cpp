@@ -22,6 +22,7 @@ void add_fp16_tests(std::vector<TestCase>& tests) {
     // 其他
     tests.push_back(TestCase(FADD_Operands_Hex_16{0x4d6f, 0x1ea8}, FADD_Operands_Hex_16{0x5455, 0xe39c}, ErrorType::Precise));
     tests.push_back(TestCase(FADD_Operands_Hex_16{0x668, 0x5b00}, FADD_Operands_Hex_16{0x8f63, 0x575}, ErrorType::Precise));
+    tests.push_back(TestCase(FADD_Operands_Hex_16{0xdcd9, 0x1054}, FADD_Operands_Hex_16{0xf800, 0x251b}, ErrorType::Precise));
 
     printf("\n---- Random tests for FP16 ----\n");
     int num_random_tests_16 = 200;

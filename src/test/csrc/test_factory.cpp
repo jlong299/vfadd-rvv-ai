@@ -7,7 +7,7 @@
 std::vector<TestCase> create_all_tests() {
     std::vector<TestCase> tests;
   
-    bool test_fp32 = false;
+    bool test_fp32 = true;
     bool test_fp16 = true;
     bool test_bf16 = true;
     bool test_fp16_widen = false;

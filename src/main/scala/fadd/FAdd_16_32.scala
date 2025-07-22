@@ -212,7 +212,7 @@ class FAdd_16_32(
                          sig_res_low_tmp(SigWidthFp19, 1), sig_res_low_tmp(SigWidthFp19 - 1, 0)) // SigWidthFp19 bits
   val exp_adjust_res_low = exp_res_extSig_fp19 + sig_res_low_tmp(SigWidthFp19).asUInt // 8 bits
   val isInf_res_low = sig_res_low_tmp(SigWidthFp19) &&
-            Mux(res_is_fp16_S2, exp_adjust_res_low === "b11111110".U, exp_adjust_res_low === "b00011110".U)
+            Mux(res_is_fp16_S2, exp_res_extSig_fp19 === "b11111110".U, exp_res_extSig_fp19 === "b00011110".U)
   val exp_res_low = Mux(exp_adjust_res_low === 1.U && !sig_res_low(SigWidthFp19 - 1), 0.U, exp_adjust_res_low) // 8 bits
 
   // High fp32/fp16/bf16
@@ -228,7 +228,7 @@ class FAdd_16_32(
                         sig_res_high_tmp(SigWidthFp32, 1), sig_res_high_tmp(SigWidthFp32 - 1, 0)) // SigWidthFp32 bits
   val exp_adjust_res_high = exp_res_extSig_fp32 + sig_res_high_tmp(SigWidthFp32).asUInt // 8 bits
   val isInf_res_high = sig_res_high_tmp(SigWidthFp32) &&
-            Mux(!res_is_fp16_S2, exp_adjust_res_high === "b11111110".U, exp_adjust_res_high === "b00011110".U)
+            Mux(!res_is_fp16_S2, exp_res_extSig_fp32 === "b11111110".U, exp_res_extSig_fp32 === "b00011110".U)
   val exp_res_high = Mux(exp_adjust_res_high === 1.U && !sig_res_high(SigWidthFp32 - 1), 0.U, exp_adjust_res_high) // 8 bits
 
   //-----------------------------------------
@@ -240,16 +240,46 @@ class FAdd_16_32(
   val resFinal_fp16_high_tmp = Cat(sign_res_extSig_fp32, exp_res_high(4, 0), sig_res_high(SigWidthFp32 - 2, 13))
   val resFinal_bf16_high_tmp = Cat(sign_res_extSig_fp32, exp_res_high, sig_res_high(SigWidthFp32 - 2, 16))
 
-  val resFinal_is_posInf_high = isInf_res_high || res_is_posInf_high_S2
-  val resFinal_is_negInf_high = isInf_res_high || res_is_negInf_high_S2
-  val resFinal_is_posInf_low = isInf_res_low || res_is_posInf_low_S2
-  val resFinal_is_negInf_low = isInf_res_low || res_is_negInf_low_S2
+  // val resFinal_is_posInf_high = isInf_res_high || res_is_posInf_high_S2
+  // val resFinal_is_negInf_high = isInf_res_high || res_is_negInf_high_S2
+  // val resFinal_is_posInf_low = isInf_res_low || res_is_posInf_low_S2
+  // val resFinal_is_negInf_low = isInf_res_low || res_is_negInf_low_S2
 
-  val resFinal_32_high = Mux(res_is_nan_high_S2, "h7FC00000".U, Mux(resFinal_is_posInf_high, "h7F800000".U, Mux(resFinal_is_negInf_high, "hFF800000".U, resFinal_32_high_tmp)))
-  val resFinal_bf16_high = Mux(res_is_nan_high_S2, "h7FC0".U, Mux(resFinal_is_posInf_high, "h7F80".U, Mux(resFinal_is_negInf_high, "hFF80".U, resFinal_bf16_high_tmp)))
-  val resFinal_fp16_high = Mux(res_is_nan_high_S2, "h7E00".U, Mux(resFinal_is_posInf_high, "h7C00".U, Mux(resFinal_is_negInf_high, "hFC00".U, resFinal_fp16_high_tmp)))
-  val resFinal_bf16_low = Mux(res_is_nan_low_S2, "h7FC0".U, Mux(resFinal_is_posInf_low, "h7F80".U, Mux(resFinal_is_negInf_low, "hFF80".U, resFinal_bf16_low_tmp)))
-  val resFinal_fp16_low = Mux(res_is_nan_low_S2, "h7E00".U, Mux(resFinal_is_posInf_low, "h7C00".U, Mux(resFinal_is_negInf_low, "hFC00".U, resFinal_fp16_low_tmp)))
+  val resFinal_32_high = MuxCase(resFinal_32_high_tmp, Seq(
+          res_is_nan_high_S2 -> "h7FC00000".U,
+          res_is_posInf_high_S2 -> "h7F800000".U,
+          res_is_negInf_high_S2 -> "hFF800000".U,
+          isInf_res_high -> sign_res_extSig_fp32 ## ~0.U(8.W) ## 0.U(23.W)
+  ))
+  val resFinal_bf16_high = MuxCase(resFinal_bf16_high_tmp, Seq(
+          res_is_nan_high_S2 -> "h7FC0".U,
+          res_is_posInf_high_S2 -> "h7F80".U,
+          res_is_negInf_high_S2 -> "hFF80".U,
+          isInf_res_high -> sign_res_extSig_fp32 ## ~0.U(8.W) ## 0.U(7.W)
+  ))
+  val resFinal_fp16_high = MuxCase(resFinal_fp16_high_tmp, Seq(
+          res_is_nan_high_S2 -> "h7E00".U,
+          res_is_posInf_high_S2 -> "h7C00".U,
+          res_is_negInf_high_S2 -> "hFC00".U,
+          isInf_res_high -> sign_res_extSig_fp32 ## ~0.U(5.W) ## 0.U(10.W)
+  ))
+  val resFinal_bf16_low = MuxCase(resFinal_bf16_low_tmp, Seq(
+          res_is_nan_low_S2 -> "h7FC0".U,
+          res_is_posInf_low_S2 -> "h7F80".U,
+          res_is_negInf_low_S2 -> "hFF80".U,
+          isInf_res_low -> sign_res_extSig_fp19 ## ~0.U(8.W) ## 0.U(7.W)
+  ))
+  val resFinal_fp16_low = MuxCase(resFinal_fp16_low_tmp, Seq(
+          res_is_nan_low_S2 -> "h7E00".U,
+          res_is_posInf_low_S2 -> "h7C00".U,
+          res_is_negInf_low_S2 -> "hFC00".U,
+          isInf_res_low -> sign_res_extSig_fp19 ## ~0.U(5.W) ## 0.U(10.W)
+  ))
+
+  // val resFinal_bf16_high = Mux(res_is_nan_high_S2, "h7FC0".U, Mux(resFinal_is_posInf_high, "h7F80".U, Mux(resFinal_is_negInf_high, "hFF80".U, resFinal_bf16_high_tmp)))
+  // val resFinal_fp16_high = Mux(res_is_nan_high_S2, "h7E00".U, Mux(resFinal_is_posInf_high, "h7C00".U, Mux(resFinal_is_negInf_high, "hFC00".U, resFinal_fp16_high_tmp)))
+  // val resFinal_bf16_low = Mux(res_is_nan_low_S2, "h7FC0".U, Mux(resFinal_is_posInf_low, "h7F80".U, Mux(resFinal_is_negInf_low, "hFF80".U, resFinal_bf16_low_tmp)))
+  // val resFinal_fp16_low = Mux(res_is_nan_low_S2, "h7E00".U, Mux(resFinal_is_posInf_low, "h7C00".U, Mux(resFinal_is_negInf_low, "hFC00".U, resFinal_fp16_low_tmp)))
 
   io.res := Mux(res_is_32_S2, resFinal_32_high,
             Mux(res_is_fp16_S2, Cat(resFinal_fp16_high, resFinal_fp16_low),
