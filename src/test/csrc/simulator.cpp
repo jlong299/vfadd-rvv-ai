@@ -107,19 +107,19 @@ bool Simulator::run_test(const TestCase& test) {
             break;
         case TestMode::FP16_Widen:
             // FP16 Widen: a,b是FP16, result是FP32
-            // 在test_case中，a,b的fp16值被存在了a_fp32_bits和b_fp32_bits的低16位中
+            // 在test_case中，a,b的fp16值被存在了a_fp32_bits和b_fp32_bits的高16位中
             top_->io_a_in_16_0 = 0;
-            top_->io_a_in_16_1 = test.a_fp32_bits & 0xFFFF;
+            top_->io_a_in_16_1 = (test.a_fp32_bits >> 16) & 0xFFFF;
             top_->io_b_in_16_0 = 0;
-            top_->io_b_in_16_1 = test.b_fp32_bits & 0xFFFF;
+            top_->io_b_in_16_1 = (test.b_fp32_bits >> 16) & 0xFFFF;
             break;
         case TestMode::BF16_Widen:
             // BF16 Widen: a,b是BF16, result是FP32
-            // 在test_case中，a,b的bf16值被存在了a_fp32_bits和b_fp32_bits的低16位中
+            // 在test_case中，a,b的bf16值被存在了a_fp32_bits和b_fp32_bits的高16位中
             top_->io_a_in_16_0 = 0;
-            top_->io_a_in_16_1 = test.a_fp32_bits & 0xFFFF;
+            top_->io_a_in_16_1 = (test.a_fp32_bits >> 16) & 0xFFFF;
             top_->io_b_in_16_0 = 0;
-            top_->io_b_in_16_1 = test.b_fp32_bits & 0xFFFF;
+            top_->io_b_in_16_1 = (test.b_fp32_bits >> 16) & 0xFFFF;
             break;
     }
 

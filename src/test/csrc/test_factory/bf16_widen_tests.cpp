@@ -18,4 +18,47 @@ void add_bf16_widen_tests(std::vector<TestCase>& tests) {
         tests.push_back(TestCase(ops, ErrorType::ULP));
     }
     // 更多不同范围的随机测试...
+    // 正常范围测试
+    for (int i = 0; i < num_random_tests_bf16_widen; ++i) {
+        FADD_Operands_BF16_Widen ops = {gen_random_bf16(-10, 10), gen_random_bf16(-10, 10)};
+        tests.push_back(TestCase(ops, ErrorType::ULP));
+    }
+    // 小数范围测试 - BF16指数范围
+    for (int i = 0; i < num_random_tests_bf16_widen; ++i) {
+        FADD_Operands_BF16_Widen ops = {gen_random_bf16(-50, -10), gen_random_bf16(-50, -10)};
+        tests.push_back(TestCase(ops, ErrorType::ULP));
+    }
+    // 大数范围测试 - BF16指数范围  
+    for (int i = 0; i < num_random_tests_bf16_widen; ++i) {
+        FADD_Operands_BF16_Widen ops = {gen_random_bf16(10, 50), gen_random_bf16(10, 50)};
+        tests.push_back(TestCase(ops, ErrorType::ULP));
+    }
+    // 混合指数范围测试
+    for (int i = 0; i < num_random_tests_bf16_widen; ++i) {
+        FADD_Operands_BF16_Widen ops = {gen_random_bf16(-126, 127), gen_random_bf16(-126, 127)};
+        tests.push_back(TestCase(ops, ErrorType::ULP));
+    }
+    // 非规格化数边界测试 - BF16
+    for (int i = 0; i < num_random_tests_bf16_widen; ++i) {
+        FADD_Operands_BF16_Widen ops = {gen_random_bf16(-126, -125), gen_random_bf16(-126, 20)};
+        tests.push_back(TestCase(ops, ErrorType::ULP));
+    }
+    for (int i = 0; i < num_random_tests_bf16_widen; ++i) {
+        FADD_Operands_BF16_Widen ops = {gen_random_bf16(-126, 20), gen_random_bf16(-126, -125)};
+        tests.push_back(TestCase(ops, ErrorType::ULP));
+    }
+    // 全范围随机测试 - 最全面的测试
+    for (int i = 0; i < num_random_tests_bf16_widen; ++i) {
+        FADD_Operands_BF16_Widen ops = {gen_random_bf16(-127, 127), gen_random_bf16(-127, 127)};
+        tests.push_back(TestCase(ops, ErrorType::ULP));
+    }
+    // 特殊组合测试 - 一个操作数极大，另一个极小
+    for (int i = 0; i < num_random_tests_bf16_widen; ++i) {
+        FADD_Operands_BF16_Widen ops = {gen_random_bf16(50, 100), gen_random_bf16(-100, -50)};
+        tests.push_back(TestCase(ops, ErrorType::ULP));
+    }
+    for (int i = 0; i < num_random_tests_bf16_widen; ++i) {
+        FADD_Operands_BF16_Widen ops = {gen_random_bf16(-100, -50), gen_random_bf16(50, 100)};
+        tests.push_back(TestCase(ops, ErrorType::ULP));
+    }
 } 

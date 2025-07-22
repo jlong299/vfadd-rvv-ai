@@ -7,7 +7,7 @@
   * Scenario:
   *   AI, vector processing in LLM, etc.
   * Note: 
-  *   1) For widen instrn, input bf/fp16 should be the lowest half of the 32-bit input
+  *   1) For widen instrn, input bf/fp16 should be the highest half of the 32-bit input
   *   2) Rounding mode only supports RNE
   * Pipeline: |      |
   *      ---->|----->|----->
@@ -83,12 +83,17 @@ class FAdd_16_32(
   val is_nan_16 = exp_is_all1s zip frac_is_0_16 map {case (is_all1s, is_0_frac) => is_all1s && !is_0_frac}
   val is_nan_32 = exp_is_all1s.drop(2) zip frac_is_0_32 map {case (is_all1s, is_0_frac) => is_all1s && !is_0_frac}
 
-  val is_subnorm = Mux(is_16, VecInit(is_subnorm_16), VecInit(Seq(false.B, false.B) ++ is_subnorm_32))
+  val is_subnorm = Mux(!res_is_32 || is_bf16, VecInit(is_subnorm_16),
+                   Mux(!widen, VecInit(Seq(false.B, false.B) ++ is_subnorm_32),
+                       VecInit.fill(4)(false.B)))
 
   //----   low_a, low_b, high_a, high_b = 0, 1, 2, 3   ----
   val exp_adjust_subnorm = Wire(Vec(4, UInt(8.W)))
-  for (i <- 0 until 4) {
+  for (i <- 0 until 2) {
     exp_adjust_subnorm(i) := Mux(is_subnorm(i), 1.U, exp_in(i))
+  }
+  for (i <- 2 until 4) {
+    exp_adjust_subnorm(i) := Mux(is_subnorm(i), 1.U, Mux(is_fp16 && widen, exp_in(i) + (127 -15).U, exp_in(i)))
   }
   //  x.xxxxxxx000   bf16 (1 + 7 + "000")
   //  x.xxxxxxxxxx   fp16 (1 + 10)
@@ -117,7 +122,7 @@ class FAdd_16_32(
   
   val fadd_extSig_fp32 = Module(new FAdd_extSig(ExpWidth = 8, SigWidth = SigWidthFp32, ExtendedWidth = ExtendedWidthFp32, ExtAreZeros = true))
   fadd_extSig_fp32.io.valid_in := io.valid_in
-  fadd_extSig_fp32.io.is_fp16 := is_fp16
+  fadd_extSig_fp32.io.is_fp16 := res_is_fp16
   val sig_adjust_subnorm_high_a = Mux(is_16, sig_adjust_subnorm_16(2) ## 0.U(13.W), sig_adjust_subnorm_32(0))
   val sig_adjust_subnorm_high_b = Mux(is_16, sig_adjust_subnorm_16(3) ## 0.U(13.W), sig_adjust_subnorm_32(1))
   fadd_extSig_fp32.io.a := Cat(sign_high_a, exp_adjust_subnorm(2), sig_adjust_subnorm_high_a, 0.U(ExtendedWidthFp32.W))

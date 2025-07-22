@@ -165,8 +165,8 @@ void TestCase::print_details() const {
         case TestMode::FP16_Widen:
             printf("Mode: FP16 Widen (a,b=FP16, result=FP32)\n");
             printf("Inputs: a=%.8f (FP16: 0x%04x), b=%.8f (FP16: 0x%04x)\n", 
-                   op_fp.a, (uint16_t)(a_fp32_bits),
-                   op_fp.b, (uint16_t)(b_fp32_bits));
+                   op_fp.a, (uint16_t)(a_fp32_bits >> 16),
+                   op_fp.b, (uint16_t)(b_fp32_bits >> 16));
             float expected_fp_widen;
             memcpy(&expected_fp_widen, &expected_res_fp32, sizeof(float));
             printf("Expected: %.8f (HEX: 0x%08X)\n", expected_fp_widen, expected_res_fp32);
@@ -174,8 +174,8 @@ void TestCase::print_details() const {
         case TestMode::BF16_Widen:
             printf("Mode: BF16 Widen (a,b=BF16, result=FP32)\n");
             printf("Inputs: a=%.8f (BF16: 0x%04x), b=%.8f (BF16: 0x%04x)\n", 
-                   op_fp.a, (uint16_t)(a_fp32_bits),
-                   op_fp.b, (uint16_t)(b_fp32_bits));
+                   op_fp.a, (uint16_t)(a_fp32_bits >> 16),
+                   op_fp.b, (uint16_t)(b_fp32_bits >> 16));
             float expected_fp_widen_bf16;
             memcpy(&expected_fp_widen_bf16, &expected_res_fp32, sizeof(float));
             printf("Expected: %.8f (HEX: 0x%08X)\n", expected_fp_widen_bf16, expected_res_fp32);

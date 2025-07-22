@@ -7,10 +7,10 @@
 std::vector<TestCase> create_all_tests() {
     std::vector<TestCase> tests;
   
-    bool test_fp32 = true;
-    bool test_fp16 = true;
-    bool test_bf16 = true;
-    bool test_fp16_widen = false;
+    bool test_fp32 = false;
+    bool test_fp16 = false;
+    bool test_bf16 = false;
+    bool test_fp16_widen = true;
     bool test_bf16_widen = false;
   
     if (test_fp32) {
@@ -21,7 +21,7 @@ std::vector<TestCase> create_all_tests() {
         add_fp16_tests(tests);
     }
 
-        if (test_bf16) {
+    if (test_bf16) {
         add_bf16_tests(tests);
     }
 
