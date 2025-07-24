@@ -10,8 +10,8 @@ std::vector<TestCase> create_all_tests() {
     bool test_fp32 = true;
     bool test_fp16 = true;
     bool test_bf16 = true;
-    bool test_fp16_widen = false;
-    bool test_bf16_widen = false;
+    bool test_fp16_widen = true;
+    bool test_bf16_widen = true;
   
     if (test_fp32) {
         add_fp32_tests(tests);

@@ -32,7 +32,6 @@ class FAdd_extSig(
     val valid_in = Input(Bool())
     val is_fp16 = Input(Bool()) // Inf of 8-bit exp: fp16: 00011111, bf16: 11111111
     val a, b = Input(UInt((1 + ExpWidth + SigWidth + ExtendedWidth).W))
-    val a_is_zero, b_is_zero = Input(Bool())
     val a_is_inf, b_is_inf = Input(Bool())
     val a_is_nan, b_is_nan = Input(Bool())
     val res = Output(UInt((1 + ExpWidth + SigWidth + ExtendedWidth + 1).W))
@@ -111,8 +110,6 @@ class FAdd_extSig(
   //----------------------------------------------
   io.valid_out := RegNext(io.valid_in)
   val is_fp16_S1 = RegEnable(io.is_fp16, io.valid_in)
-  val a_is_zero_S1 = RegEnable(io.a_is_zero, io.valid_in)
-  val b_is_zero_S1 = RegEnable(io.b_is_zero, io.valid_in)
   val a_in_S1 = RegEnable(io.a, io.valid_in)
   val b_in_S1 = RegEnable(io.b, io.valid_in)
   val sign_a_S1 = RegEnable(sign_a, io.valid_in)
@@ -189,9 +186,7 @@ class FAdd_extSig(
   val exp_adderOut_shifted = exp_adderOut - exp_adderOut_tobe_subtracted
 
   //                                                           1 + ExpWidth + (SigWidth + ExtendedWidth + 1)
-  io.res := Mux(adderOut_isZero, 0.U, 
-            Mux(!a_is_zero_S1 && !b_is_zero_S1, Cat(sign_adderOut, exp_adderOut_shifted, sig_adderOut_shifted),
-                Cat(Mux(a_is_zero_S1, b_in_S1, a_in_S1), false.B)))
+  io.res := Mux(adderOut_isZero, 0.U, Cat(sign_adderOut, exp_adderOut_shifted, sig_adderOut_shifted))
 
   io.res_is_nan := RegEnable(res_is_nan_S0, io.valid_in)
   io.res_is_posInf := RegEnable(res_is_posInf_S0, io.valid_in) || adderOut_is_inf && !sign_adderOut
