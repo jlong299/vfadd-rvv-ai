@@ -1,4 +1,5 @@
 #include "include/test_case.h"
+#include "include/softfloat_ref.h"
 #include <iostream>
 #include <bitset>
 #include <memory>
@@ -23,8 +24,7 @@ TestCase::TestCase(const FADD_Operands_Hex& ops_hex, ErrorType error_type)
     memcpy(&op_fp.b, &b_fp32_bits, sizeof(float));
 
     // 计算期望结果
-    float expected_fp = op_fp.a + op_fp.b;
-    memcpy(&expected_res_fp32, &expected_fp, sizeof(uint32_t));
+    expected_res_fp32 = softfloat_add_fp32(a_fp32_bits, b_fp32_bits);
 }
 
 // FP16 dual operation constructor
@@ -49,11 +49,8 @@ TestCase::TestCase(const FADD_Operands_Hex_16& op1, const FADD_Operands_Hex_16& 
     op2_fp.b = fp16_to_fp32(op2.b_hex);
 
     // Calculate and store expected results
-    float expected_fp1 = op1_fp.a + op1_fp.b;
-    float expected_fp2 = op2_fp.a + op2_fp.b;
-    
-    expected_res1_fp16 = fp32_to_fp16(expected_fp1);
-    expected_res2_fp16 = fp32_to_fp16(expected_fp2);
+    expected_res1_fp16 = softfloat_add_fp16(a1_fp16_bits, b1_fp16_bits);
+    expected_res2_fp16 = softfloat_add_fp16(a2_fp16_bits, b2_fp16_bits);
 }
 
 // BF16 dual operation constructor
@@ -78,11 +75,8 @@ TestCase::TestCase(const FADD_Operands_Hex_BF16& op1, const FADD_Operands_Hex_BF
     op2_fp.b = bf16_to_fp32(op2.b_hex);
 
     // Calculate and store expected results
-    float expected_fp1 = op1_fp.a + op1_fp.b;
-    float expected_fp2 = op2_fp.a + op2_fp.b;
-    
-    expected_res1_bf16 = fp32_to_bf16(expected_fp1);
-    expected_res2_bf16 = fp32_to_bf16(expected_fp2);
+    expected_res1_bf16 = softfloat_add_bf16(a1_bf16_bits, b1_bf16_bits);
+    expected_res2_bf16 = softfloat_add_bf16(a2_bf16_bits, b2_bf16_bits);
 }
 
 // FP16 widen operation constructor
@@ -100,10 +94,12 @@ TestCase::TestCase(const FADD_Operands_FP16_Widen& ops_widen, ErrorType error_ty
     op_fp.b = fp16_to_fp32(ops_widen.b_hex);
     
     // 计算期望结果 (FP32精度)
-    float expected_fp = op_fp.a + op_fp.b;
-    
-    // 转换期望结果为位表示
-    memcpy(&expected_res_fp32, &expected_fp, sizeof(uint32_t));
+    float a_float = fp16_to_fp32(ops_widen.a_hex);
+    float b_float = fp16_to_fp32(ops_widen.b_hex);
+    uint32_t a_fp32, b_fp32;
+    memcpy(&a_fp32, &a_float, sizeof(uint32_t));
+    memcpy(&b_fp32, &b_float, sizeof(uint32_t));
+    expected_res_fp32 = softfloat_add_fp32(a_fp32, b_fp32);
 }
 
 // BF16 widen operation constructor
@@ -121,10 +117,12 @@ TestCase::TestCase(const FADD_Operands_BF16_Widen& ops_widen, ErrorType error_ty
     op_fp.b = bf16_to_fp32(ops_widen.b_hex);
     
     // 计算期望结果 (FP32精度)
-    float expected_fp = op_fp.a + op_fp.b;
-    
-    // 转换期望结果为位表示
-    memcpy(&expected_res_fp32, &expected_fp, sizeof(uint32_t));
+    float a_float = bf16_to_fp32(ops_widen.a_hex);
+    float b_float = bf16_to_fp32(ops_widen.b_hex);
+    uint32_t a_fp32, b_fp32;
+    memcpy(&a_fp32, &a_float, sizeof(uint32_t));
+    memcpy(&b_fp32, &b_float, sizeof(uint32_t));
+    expected_res_fp32 = softfloat_add_fp32(a_fp32, b_fp32);
 }
 
 void TestCase::print_details() const {

@@ -26,9 +26,12 @@ ifeq ($(vcd), 1)
 endif
 
 # C flags
+SOFTFLOAT_DIR = $(abspath ./src/test/csrc/softfloat)
 INC_PATH += $(abspath ./src/test/csrc/include)
+INC_PATH += $(SOFTFLOAT_DIR)/include
 INCFLAGS = $(addprefix -I, $(INC_PATH))
 CFLAGS += $(INCFLAGS) $(CFLAGS_SIM) -DTOP_NAME="V$(TOPNAME)"
+LDFLAGS += $(SOFTFLOAT_DIR)/lib/softfloat.a
 
 # source file
 VSRCS = $(TOP_V)
