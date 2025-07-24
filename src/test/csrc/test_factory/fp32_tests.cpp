@@ -18,6 +18,7 @@ void add_fp32_tests(std::vector<TestCase>& tests) {
     tests.push_back(TestCase(FADD_Operands_Hex{0xbf7f7861, 0x7bede2c6}, ErrorType::Precise));
     tests.push_back(TestCase(FADD_Operands_Hex{0x58800c00, 0x58800400}, ErrorType::Precise));
     tests.push_back(TestCase(FADD_Operands_Hex{0x816849E7, 0x00B6D8A2}, ErrorType::Precise));
+    tests.push_back(TestCase(FADD_Operands_Hex{0x80000000, 0x80000000}, ErrorType::Precise)); // -0.0f + -0.0f = -0.0f
 
     int num_random_tests_32 = 200;
     ErrorType default_error_type = ErrorType::Precise;
