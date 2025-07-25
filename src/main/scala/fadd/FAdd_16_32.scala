@@ -30,6 +30,7 @@ class FAdd_16_32(
     val valid_in = Input(Bool())
     val is_bf16, is_fp16, is_fp32 = Input(Bool())
     val is_widen = Input(Bool())
+    val a_already_widen = Input(Bool()) // a already widened to fp32 (b not)
     val a, b = Input(UInt(32.W))
     val res = Output(UInt(32.W))
     val valid_out = Output(Bool())
@@ -90,13 +91,12 @@ class FAdd_16_32(
   //----   low_a, low_b, high_a, high_b = 0, 1, 2, 3   ----
   val exp_adjust_subnorm = Wire(Vec(4, UInt(8.W)))
   val is_fp16_widen = is_fp16 && widen
-  for (i <- 0 until 4) {
-    if (i < 2) {
+  for (i <- 0 until 2) {
       exp_adjust_subnorm(i) := Mux(is_subnorm(i), 1.U, exp_in(i))
-    } else {
-      exp_adjust_subnorm(i) := Mux(is_subnorm(i), 1.U, exp_in(i)) + Mux(is_fp16_widen, (127 - 15).U, 0.U)
-    }
   }
+  exp_adjust_subnorm(2) := Mux(is_subnorm(2), 1.U, exp_in(2)) + Mux(is_fp16_widen && !io.a_already_widen, (127 - 15).U, 0.U)
+  exp_adjust_subnorm(3) := Mux(is_subnorm(3), 1.U, exp_in(3)) + Mux(is_fp16_widen, (127 - 15).U, 0.U)
+    
   //  x.xxxxxxx000   bf16 (1 + 7 + "000")
   //  x.xxxxxxxxxx   fp16 (1 + 10)
   val sig_adjust_subnorm_16 = Wire(Vec(4, UInt(11.W)))
@@ -123,7 +123,7 @@ class FAdd_16_32(
   val fadd_extSig_fp32 = Module(new FAdd_extSig(ExpWidth = 8, SigWidth = SigWidthFp32, ExtendedWidth = ExtendedWidthFp32, ExtAreZeros = true))
   fadd_extSig_fp32.io.valid_in := io.valid_in
   fadd_extSig_fp32.io.is_fp16 := res_is_fp16
-  val sig_adjust_subnorm_high_a = Mux(is_16, sig_adjust_subnorm_16(2) ## 0.U(13.W), sig_adjust_subnorm_32(0))
+  val sig_adjust_subnorm_high_a = Mux(is_16 && !io.a_already_widen, sig_adjust_subnorm_16(2) ## 0.U(13.W), sig_adjust_subnorm_32(0))
   val sig_adjust_subnorm_high_b = Mux(is_16, sig_adjust_subnorm_16(3) ## 0.U(13.W), sig_adjust_subnorm_32(1))
   fadd_extSig_fp32.io.a := Cat(sign_high_a, exp_adjust_subnorm(2), sig_adjust_subnorm_high_a, 0.U(ExtendedWidthFp32.W))
   fadd_extSig_fp32.io.b := Cat(sign_high_b, exp_adjust_subnorm(3), sig_adjust_subnorm_high_b, 0.U(ExtendedWidthFp32.W))

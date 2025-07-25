@@ -84,6 +84,7 @@ bool Simulator::run_test(const TestCase& test) {
     top_->io_is_fp16  = test.is_fp16;
     top_->io_is_bf16  = test.is_bf16;
     top_->io_is_widen = test.is_widen;
+    top_->io_a_already_widen = 0; // 新增信号连接，设为0
 
     // 2. 根据模式设置数据输入端口
     switch(test.mode) {

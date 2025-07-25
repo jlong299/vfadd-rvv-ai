@@ -11,7 +11,7 @@ class top extends Module{
   val io = IO(new Bundle {
     val valid_in = Input(Bool())
     val is_bf16, is_fp16, is_fp32 = Input(Bool())
-    val is_widen = Input(Bool())
+    val is_widen, a_already_widen = Input(Bool())
     val a_in_32 = Input(UInt(32.W))
     val b_in_32 = Input(UInt(32.W))
     val a_in_16 = Input(Vec(2, UInt(16.W)))
@@ -28,6 +28,7 @@ class top extends Module{
   fadd.io.is_fp16 := io.is_fp16
   fadd.io.is_fp32 := io.is_fp32
   fadd.io.is_widen := io.is_widen
+  fadd.io.a_already_widen := io.a_already_widen
 
   when(io.is_fp32) {
     fadd.io.a := io.a_in_32
