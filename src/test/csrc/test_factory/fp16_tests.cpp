@@ -27,7 +27,7 @@ void add_fp16_tests(std::vector<TestCase>& tests) {
 
     printf("\n---- Random tests for FP16 ----\n");
     int num_random_tests_16 = 200;
-    ErrorType default_error_type = ErrorType::ULP;
+    ErrorType default_error_type = ErrorType::Precise;
     // ---- FP16 任意值随机测试 ----
     for (int i = 0; i < num_random_tests_16; ++i) {
         FADD_Operands_Hex_16 ops1 = {gen_any_fp16(), gen_any_fp16()};
