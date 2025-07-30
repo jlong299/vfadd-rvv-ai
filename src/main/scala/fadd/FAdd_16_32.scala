@@ -31,7 +31,7 @@ class FAdd_16_32(
     val is_bf16, is_fp16, is_fp32 = Input(Bool())
     val is_widen = Input(Bool())
     val a_already_widen = Input(Bool()) // a already widened to fp32 (b not)
-    val a, b = Input(UInt(32.W))
+    val a, b = Input(UInt(32.W))  // a: vs2   b: vs1/rs1
     val res = Output(UInt(32.W))
     val valid_out = Output(Bool())
     val valid_S1 = Output(Bool())
