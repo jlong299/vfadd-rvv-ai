@@ -7,6 +7,7 @@
   * 13.16 vfmv
   */
 //TODO: compare output valid only on uopEnd
+//TODO: compare output 32b: last 2 bits   16b: last 4 bits (dirty code)
 package race.vpu.exu.laneexu.fp
 
 import chisel3._
@@ -108,6 +109,7 @@ class VFAddWrapper extends Module {
   val funct6_S2 = out_bits.uop.ctrl.funct6
   val vs1_S2 = RegEnable(RegEnable(vs1, io.in.valid), vfadd0.io.valid_S1)
   val vs2_S2 = RegEnable(RegEnable(vs2, io.in.valid), vfadd0.io.valid_S1)
+  val rs1_S2 = RegEnable(RegEnable(rs1, io.in.valid), vfadd0.io.valid_S1)
   val vs1_S2_16b = UIntSplit(vs1_S2, 16)
   val vs2_S2_16b = UIntSplit(vs2_S2, 16)
   val res_is_16b_S2 = RegEnable(RegEnable(res_is_16b, io.in.valid), vfadd0.io.valid_S1)
@@ -178,7 +180,7 @@ class VFAddWrapper extends Module {
   out_bits.vd := MuxCase(Cat(vfadd1.io.res, vfadd0.io.res), Seq(
     isMinMax_S2 -> vd_minmax.asUInt,
     isSgn_S2 -> vd_sgn.asUInt,
-    isMove_S2 -> rs1,
+    isMove_S2 -> rs1_S2,
     isCmp_S2 -> vd_cmp
   ))
 
