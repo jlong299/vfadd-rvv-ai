@@ -22,7 +22,7 @@ class top extends Module{
     val valid_out = Output(Bool())
   })
 
-  val fadd = Module(new FAdd_16_32(6, 12))
+  val fadd = Module(new FAdd_16_32(3, 3))
   fadd.io.valid_in := io.valid_in
   fadd.io.is_bf16 := io.is_bf16
   fadd.io.is_fp16 := io.is_fp16
