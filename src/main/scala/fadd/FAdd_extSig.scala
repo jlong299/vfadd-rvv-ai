@@ -25,7 +25,7 @@ import race.vpu.yunsuan.util._
 class FAdd_extSig(
     ExpWidth: Int, // fp16: 5   bf16: 8   fp32: 8
     SigWidth: Int, // fp16: 11  bf16: 8   fp32: 24
-    ExtendedWidth: Int, // default: SigWidth + 2,
+    ExtendedWidth: Int, // default: SigWidth + 2 (not necessary)
     ExtAreZeros: Boolean = false
 ) extends Module {
   val io = IO(new Bundle {
@@ -55,7 +55,7 @@ class FAdd_extSig(
   //---- Shifting ----
   val exp_a_gte_b = !exp_diff_a_minus_b(ExpWidth)
   // number of bits of shift amount
-  val bShiftRight = log2Up(SigWidth + ExtendedWidth)
+  val bShiftRight = log2Up(SigWidth + ExtendedWidth + 1)
   val a_dominates = exp_a_gte_b && exp_diff_a_minus_b(ExpWidth, bShiftRight).orR
   val b_dominates = !exp_diff_b_minus_a(ExpWidth) && exp_diff_b_minus_a(ExpWidth, bShiftRight).orR
   val shift_amount_a, shift_amount_b = Wire(UInt(bShiftRight.W))
@@ -75,7 +75,11 @@ class FAdd_extSig(
   // Select input of shift block, a or b.
   val shiftRight_in = Mux(exp_a_gte_b, sig_b, sig_a)
   val shiftRight_amount = Mux(exp_a_gte_b, shift_amount_b, shift_amount_a)
-  val shiftRight_out = shiftRight_in >> shiftRight_amount // SigWidth + ExtendedWidth bits
+  // val shiftRight_out = shiftRight_in >> shiftRight_amount // SigWidth + ExtendedWidth bits
+  val shiftRight_res = ShiftRightJam(shiftRight_in, shiftRight_amount)
+  val (shiftRight_res_main, shiftRight_res_sticky) = (shiftRight_res._1, shiftRight_res._2)
+  require(shiftRight_res_main.getWidth == SigWidth + ExtendedWidth)  //shiftRight_out is SigWidth + ExtendedWidth bits
+  val shiftRight_out = Cat(shiftRight_res_main(SigWidth + ExtendedWidth - 1, 1), shiftRight_res_main(0) || shiftRight_res_sticky)
 
   //---- Comparison of absolute value of a and b ----
   // Divide the comparison into two parts: SigWidth part and ExtendedWidth part
